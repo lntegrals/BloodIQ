@@ -1,2 +1,29 @@
-# BloodIQ
-Webapp to analyze blood test results and give user feedback based on those
+# BloodLens
+
+A Flask-based web application for blood analysis.
+
+## Project Structure
+```
+bloodlens/
+├── app.py
+├── templates/
+│   ├── index.html
+│   └── results.html
+├── static/
+│   └── style.css
+├── utils/
+│   └── prompt_builder.py
+├── requirements.txt
+└── README.md
+```
+
+## Setup
+1. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+2. Run the application:
+```bash
+python app.py
+```
