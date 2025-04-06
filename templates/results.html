@@ -143,6 +143,8 @@
             margin-bottom: 10px;
             border: 1px solid rgba(255,75,92,0.2);
             transition: all 0.3s ease;
+            position: relative;
+            cursor: help;
         }
 
         .key-stat:hover {
@@ -150,17 +152,48 @@
             border-color: var(--primary-red);
         }
 
-        .stat-label {
-            font-size: 0.9rem;
-            color: #999;
-            margin-bottom: 4px;
+        .key-stat:hover .marker-insight {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
         }
 
-        .stat-value {
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: var(--primary-red);
+        .marker-insight {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--primary-red);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 100;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.15);
         }
+
+        .marker-range {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .marker-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-top: 5px;
+        }
+
+        .status-normal { background: rgba(0, 255, 0, 0.15); color: #90ff90; }
+        .status-low { background: rgba(255, 255, 0, 0.15); color: #ffff90; }
+        .status-high { background: rgba(255, 0, 0, 0.15); color: #ff9090; }
 
         .biomarker-grid {
             display: grid;
@@ -168,7 +201,40 @@
             gap: 15px;
             margin-top: 20px;
         }
+
+        /* Add these new styles for tabs */
+        .nav-tabs {
+            border-bottom: 1px solid #333;
+        }
+
+        .nav-tabs .nav-link {
+            color: #ddd;
+            border: none;
+            padding: 10px 20px;
+            margin-right: 5px;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tabs .nav-link:hover {
+            background: rgba(255,75,92,0.1);
+            border-color: transparent;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: var(--primary-red);
+            background: rgba(255,75,92,0.15);
+            border-color: transparent;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            padding: 20px 0;
+        }
     </style>
+    <!-- Add Bootstrap JavaScript and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
 </head>
 <body>
     <div class="results-card">
@@ -222,10 +288,18 @@
             <h2 class="section-header">🧪 Blood Markers</h2>
             <div class="biomarker-grid">
                 {% for marker, value in user_data.biomarkers.items() %}
-                <div class="key-stat">
-                    <div class="stat-label">{{ marker }}</div>
-                    <div class="stat-value">{{ value }}</div>
-                </div>
+                    {% set insight = get_marker_insight(marker, value) %}
+                    <div class="key-stat">
+                        <div class="stat-label">{{ marker }}</div>
+                        <div class="stat-value">{{ value }}</div>
+                        <div class="marker-insight">
+                            <div>{{ insight.description }}</div>
+                            <div class="marker-range">Normal Range: {{ insight.range }}</div>
+                            <div class="marker-status {{ insight.status_class }}">
+                                {{ insight.status }}
+                            </div>
+                        </div>
+                    </div>
                 {% endfor %}
             </div>
         </div>
@@ -234,6 +308,56 @@
         <div class="result-section">
             <h2 class="section-header">💡 Health Analysis</h2>
             <div class="insights-text">{{ feedback | safe }}</div>
+        </div>
+
+        <!-- AI Insights Tabs -->
+        <div class="result-section">
+            <h2 class="section-header">🤖 AI Health Insights</h2>
+            <ul class="nav nav-tabs mb-3" id="insightTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="analysis-tab" data-bs-toggle="tab" data-bs-target="#analysis" type="button" role="tab">
+                        Analysis
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="meal-tab" data-bs-toggle="tab" data-bs-target="#meal-plan" type="button" role="tab">
+                        Meal Plan
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="exercise-tab" data-bs-toggle="tab" data-bs-target="#exercise" type="button" role="tab">
+                        Exercise
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="supplements-tab" data-bs-toggle="tab" data-bs-target="#supplements" type="button" role="tab">
+                        Supplements
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="risks-tab" data-bs-toggle="tab" data-bs-target="#risks" type="button" role="tab">
+                        Risks
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="insightTabContent">
+                <div class="tab-pane fade show active" id="analysis" role="tabpanel" tabindex="0">
+                    <div class="insights-text">{{ analysis | safe }}</div>
+                </div>
+                <div class="tab-pane fade" id="meal-plan" role="tabpanel" tabindex="0">
+                    <div class="insights-text">{{ meal_plan | safe }}</div>
+                </div>
+                <div class="tab-pane fade" id="exercise" role="tabpanel" tabindex="0">
+                    <div class="insights-text">{{ exercise_plan | safe }}</div>
+                </div>
+                <div class="tab-pane fade" id="supplements" role="tabpanel" tabindex="0">
+                    <div class="insights-text">{{ supplements | safe }}</div>
+                </div>
+                <div class="tab-pane fade" id="risks" role="tabpanel" tabindex="0">
+                    <div class="insights-text">{{ risks | safe }}</div>
+                </div>
+            </div>
         </div>
 
         <div class="text-center mt-4">
