@@ -20,76 +20,76 @@ model = genai.GenerativeModel('models/gemini-2.0-flash-lite')
 def get_marker_info(marker):
     """Get reference ranges and descriptions for biomarkers"""
     info = {
-        "Glucose": {
-            "range": "70-99 mg/dL",
-            "description": "Blood sugar level - key indicator of metabolic health",
-            "thresholds": {"low": 70, "high": 99}
+        'albumin': {
+            'range': '3.4-5.4 g/dL',
+            'optimal': (4.3, 5.2),
+            'unit': 'g/dL',
+            'description': 'Protein made by liver; low levels can indicate malnutrition or liver/kidney disease',
+            'thresholds': {'low': 3.4, 'high': 5.4}
         },
-        "HDL": {
-            "range": "40-60 mg/dL",
-            "description": "Good cholesterol - helps protect heart health",
-            "thresholds": {"low": 40, "high": 60}
+        'glucose': {
+            'range': '70-99 mg/dL',
+            'optimal': (70, 90),
+            'unit': 'mg/dL',
+            'description': 'Blood sugar level; high levels indicate diabetes risk or metabolic issues',
+            'thresholds': {'low': 70, 'high': 99}
         },
-        "LDL": {
-            "range": "<100 mg/dL",
-            "description": "Bad cholesterol - lower is generally better",
-            "thresholds": {"low": 0, "high": 100}
+        'crp': {
+            'range': '0-3.0 mg/L',
+            'optimal': (0, 1),
+            'unit': 'mg/L',
+            'description': 'Inflammation marker; elevated levels indicate systemic inflammation',
+            'thresholds': {'low': 0, 'high': 3.0}
         },
-        "CRP": {
-            "range": "<3.0 mg/L",
-            "description": "Inflammation marker - indicates systemic inflammation",
-            "thresholds": {"low": 0, "high": 3.0}
+        'lymph_pct': {
+            'range': '20-40%',
+            'optimal': (25, 35),
+            'unit': '%',
+            'description': 'Percentage of white blood cells that are lymphocytes; immune system indicator',
+            'thresholds': {'low': 20, 'high': 40}
         },
-        "ALT": {
-            "range": "7-56 U/L",
-            "description": "Liver enzyme - elevated in liver stress",
-            "thresholds": {"low": 7, "high": 56}
+        'mcv': {
+            'range': '80-100 fL',
+            'optimal': (85, 95),
+            'unit': 'fL',
+            'description': 'Mean Corpuscular Volume; size of red blood cells',
+            'thresholds': {'low': 80, 'high': 100}
         },
-        "AST": {
-            "range": "10-40 U/L",
-            "description": "Liver enzyme - indicates liver health",
-            "thresholds": {"low": 10, "high": 40}
+        'rdw': {
+            'range': '11.5-14.5%',
+            'optimal': (12.0, 13.5),
+            'unit': '%',
+            'description': 'Red Cell Distribution Width; variation in red blood cell size',
+            'thresholds': {'low': 11.5, 'high': 14.5}
         },
-        "Albumin": {
-            "range": "3.4-5.4 g/dL",
-            "description": "Important protein for blood volume",
-            "thresholds": {"low": 3.4, "high": 5.4}
+        'alk_phos': {
+            'range': '44-147 U/L',
+            'optimal': (50, 120),
+            'unit': 'U/L',
+            'description': 'Alkaline Phosphatase; enzyme related to liver and bone health',
+            'thresholds': {'low': 44, 'high': 147}
         },
-        "Creatinine": {
-            "range": "0.7-1.3 mg/dL",
-            "description": "Kidney function marker",
-            "thresholds": {"low": 0.7, "high": 1.3}
+        'wbc': {
+            'range': '4.5-11.0 K/µL',
+            'optimal': (5.0, 8.0),
+            'unit': 'K/µL',
+            'description': 'White Blood Cell count; immune system activity indicator',
+            'thresholds': {'low': 4.5, 'high': 11.0}
         },
-        "Lymphocyte %": {
-            "range": "20-40%",
-            "description": "White blood cells - immune health",
-            "thresholds": {"low": 20, "high": 40}
-        },
-        "MCV": {
-            "range": "80-100 fL",
-            "description": "Red blood cell size",
-            "thresholds": {"low": 80, "high": 100}
-        },
-        "RDW": {
-            "range": "11.5-14.5%",
-            "description": "Red cell size variation",
-            "thresholds": {"low": 11.5, "high": 14.5}
-        },
-        "Alkaline Phosphatase": {
-            "range": "44-147 U/L",
-            "description": "Liver & bone enzyme",
-            "thresholds": {"low": 44, "high": 147}
-        },
-        "WBC": {
-            "range": "4.5-11.0 ×10⁹/L",
-            "description": "Overall immune strength",
-            "thresholds": {"low": 4.5, "high": 11.0}
+        'creatinine': {
+            'range': '0.6-1.3 mg/dL',
+            'optimal': (0.7, 1.2),
+            'unit': 'mg/dL',
+            'description': 'Kidney function marker; filtered waste product from muscles',
+            'thresholds': {'low': 0.6, 'high': 1.3}
         }
     }
     return info.get(marker, {
-        "range": "N/A",
-        "description": "No reference data available",
-        "thresholds": {"low": 0, "high": 999999}
+        'range': 'N/A',
+        'optimal': (0, 0),
+        'unit': '',
+        'description': 'No reference data available',
+        'thresholds': {'low': 0, 'high': 999999}
     })
 
 @app.route('/')
@@ -150,31 +150,32 @@ def results():
         # Generate marker insights
         marker_insights = {}
         for marker, value in biomarkers.items():
-            if value:
-                marker_insights[marker] = get_marker_info(marker)
-                value_float = float(value)
-                
-                if value_float < marker_insights[marker]["thresholds"]["low"]:
-                    status = "Below Normal"
-                    status_class = "status-low"
-                elif value_float > marker_insights[marker]["thresholds"]["high"]:
-                    status = "Above Normal"
-                    status_class = "status-high"
-                else:
-                    status = "Normal"
-                    status_class = "status-normal"
+            if value and marker != 'age':  # Skip age from biomarker analysis
+                info = get_marker_info(marker)
+                try:
+                    value_float = float(value)
+                    
+                    if value_float < info['thresholds']['low']:
+                        status = "Below Normal"
+                        status_class = "status-low"
+                    elif value_float > info['thresholds']['high']:
+                        status = "Above Normal"
+                        status_class = "status-high"
+                    else:
+                        status = "Normal"
+                        status_class = "status-normal"
 
-                marker_insights[marker].update({
-                    "status": status,
-                    "status_class": status_class
-                })
-            else:
-                marker_insights[marker] = {
-                    "range": "N/A",
-                    "description": "Invalid value",
-                    "status": "Unknown",
-                    "status_class": ""
-                }
+                    marker_insights[marker] = {
+                        'value': value_float,
+                        'unit': info['unit'],
+                        'range': info['range'],
+                        'description': info['description'],
+                        'status': status,
+                        'status_class': status_class,
+                        'reference': info  # Include full reference data
+                    }
+                except (ValueError, TypeError):
+                    continue
 
         # Generate AI insights
         try:

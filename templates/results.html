@@ -281,8 +281,8 @@
                 {% for marker, data in marker_insights.items() %}
                     {% if data and data.description %}
                     <div class="key-stat">
-                        <div class="stat-label">{{ marker }}</div>
-                        <div class="value-highlight">{{ user_data.biomarkers[marker] }} {{ data.reference.unit }}</div>
+                        <div class="stat-label">{{ marker|title }}</div>
+                        <div class="value-highlight">{{ data.value }} {{ data.unit }}</div>
                         <div class="marker-insight">
                             <div><strong>{{ data.description }}</strong></div>
                             <div class="marker-range">Normal Range: {{ data.range }}</div>
