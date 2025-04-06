@@ -306,7 +306,26 @@
         <!-- Enhanced AI Insights Section -->
         <div class="result-section">
             <h2 class="section-header">💡 Health Analysis</h2>
-            <div class="insights-text">{{ feedback | safe }}</div>
+            <div class="d-flex justify-content-center align-items-center mb-4">
+                <div class="text-center mx-4">
+                    <h3 class="mb-2">Chronological Age</h3>
+                    <div class="value-highlight" style="font-size: 2.5rem;">{{ user_data.age }}</div>
+                    <small class="text-muted">Years</small>
+                </div>
+                <div class="text-center mx-4">
+                    <h3 class="mb-2">Biological Age</h3>
+                    <div class="value-highlight" style="font-size: 2.5rem;">{{ biological_age }}</div>
+                    <small class="text-muted">Years</small>
+                </div>
+            </div>
+            <div class="insights-text">
+                Based on your blood markers, your biological age is {{ "lower" if biological_age < user_data.age else "higher" }} than your chronological age. 
+                {% if biological_age < user_data.age %}
+                    This suggests your body is aging slower than average, indicating good health practices!
+                {% else %}
+                    This suggests some health factors may be accelerating your aging process. Review the detailed insights below for improvement areas.
+                {% endif %}
+            </div>
         </div>
 
         <!-- AI Insights Tabs -->
