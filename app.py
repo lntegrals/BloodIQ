@@ -5,64 +5,18 @@ import google.generativeai as genai
 import numpy as np
 from utils.prompt_builder import generate_prompt
 
-# Load .env API key
+print("🔥 Flask app started from THIS app.py!")  # Confirm you're using the right app
+
+# Load Gemini API key from .env
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = Flask(__name__)
 
-# --- Phenotypic Age Calculator ---
+# --- TEMP TEST: Phenotypic Age Calculator (fake result) ---
 def calculate_phenotypic_age(data):
-    try:
-        # Raw inputs
-        albumin_g_dL = float(data["albumin"])
-        creatinine_mg_dL = float(data["creatinine"])
-        glucose_mg_dL = float(data["glucose"])
-        crp_mg_L = float(data["crp"])
-        lymph_pct = float(data["lymph_pct"])
-        mcv = float(data["mcv"])
-        rdw = float(data["rdw"])
-        alk_phos = float(data["alk_phos"])
-        wbc_x10_9_per_L = float(data["wbc"])
-        age = float(data["age"])
-
-        # Convert units to match model expectations
-        albumin = albumin_g_dL * 10               # g/L
-        creatinine = creatinine_mg_dL * 88.4      # µmol/L
-        glucose = glucose_mg_dL / 18              # mmol/L
-        crp_val = crp_mg_L / 10                   # mg/dL
-        if crp_val <= 0:
-            raise ValueError("CRP must be > 0")
-        crp = np.log(crp_val)
-        wbc = wbc_x10_9_per_L * 1000              # 1000 cells/uL
-
-        # Gompertz XB calculation
-        xb = (
-            -19.907
-            - 0.0336 * albumin
-            + 0.0095 * creatinine
-            + 0.1953 * glucose
-            + 0.0954 * crp
-            - 0.0120 * lymph_pct
-            + 0.0268 * mcv
-            + 0.3306 * rdw
-            + 0.0019 * alk_phos  # Correct coefficient!
-            + 0.0554 * wbc
-            + 0.0804 * age
-        )
-
-        # Prevent math overflow
-        xb = np.clip(xb, -30, 30)
-        exp_part = np.exp(xb)
-        M = 1 - np.exp(-1.51714 * exp_part / 0.0076927)
-        M = np.clip(M, 1e-5, 1 - 1e-5)
-
-        phenotypic_age = 141.50 + (np.log(-0.00553 * np.log(1 - M))) / 0.09165
-        return round(phenotypic_age, 2)
-
-    except Exception as e:
-        print("Phenotypic Age Calculation Error:", e)
-        return "Calculation error"
+    print("🔥 This function was called correctly!")
+    return 42.42  # FORCE FIX VALUE to test if it's being used
 
 # --- Routes ---
 @app.route('/')
@@ -77,7 +31,7 @@ def results():
     height = request.form.get('height')
     weight = request.form.get('weight')
 
-    # Extract biomarkers for Gemini prompt
+    # Biomarkers for Gemini prompt
     biomarkers = {
         "Glucose": request.form.get('glucose'),
         "HDL": request.form.get('hdl'),
@@ -88,7 +42,6 @@ def results():
     }
 
     try:
-        # Ensure valid number conversion
         user_data = {
             "age": int(age),
             "sex": sex,
@@ -97,7 +50,6 @@ def results():
             "biomarkers": {k: float(v) for k, v in biomarkers.items() if v}
         }
 
-        # Prepare phenotypic age inputs
         phenotypic_inputs = {
             "age": float(age),
             "albumin": request.form.get('albumin'),
@@ -113,13 +65,17 @@ def results():
 
         phenotypic_age = calculate_phenotypic_age(phenotypic_inputs)
 
+        # 🔍 Confirm it's working
+        print("[DEBUG] phenotypic_age =", phenotypic_age)
+        print("[DEBUG] user_data =", user_data)
+
     except ValueError:
         return "Invalid input. Please ensure all fields are numbers."
 
-    # Gemini prompt generation
+    # Gemini Prompt
     prompt = generate_prompt(user_data)
 
-    # Call Gemini API
+    # Gemini API call
     try:
         model = genai.GenerativeModel(model_name="models/gemini-1.5-pro")
         response = model.generate_content(prompt)
