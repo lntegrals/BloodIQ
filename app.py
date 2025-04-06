@@ -143,14 +143,40 @@ def get_advice():
 @app.route('/results', methods=['POST'])
 def results():
     try:
-        # Collect user input
+        # Basic info
         age = request.form.get('age')
         sex = request.form.get('sex')
         height = request.form.get('height')
         weight = request.form.get('weight')
 
-        # Biomarkers for phenotypic age calculation
-        phenotypic_inputs = {
+        # All biomarkers for display and analysis
+        biomarkers = {
+            "Glucose": request.form.get('glucose'),
+            "HDL": request.form.get('hdl'),
+            "LDL": request.form.get('ldl'),
+            "CRP": request.form.get('crp'),
+            "ALT": request.form.get('alt'),
+            "AST": request.form.get('ast'),
+            "Albumin": request.form.get('albumin'),
+            "Creatinine": request.form.get('creatinine'),
+            "Lymphocyte %": request.form.get('lymph_pct'),
+            "MCV": request.form.get('mcv'),
+            "RDW": request.form.get('rdw'),
+            "Alkaline Phosphatase": request.form.get('alk_phos'),
+            "WBC": request.form.get('wbc')
+        }
+
+        # Format data for Gemini AI
+        user_data = {
+            "age": int(age),
+            "sex": sex,
+            "height_cm": float(height),
+            "weight_kg": float(weight),
+            "biomarkers": {k: float(v) for k, v in biomarkers.items() if v}
+        }
+
+        # Calculate phenotypic age
+        phenotypic_age = calculate_phenotypic_age({
             "age": age,
             "albumin": request.form.get('albumin'),
             "creatinine": request.form.get('creatinine'),
@@ -161,46 +187,45 @@ def results():
             "rdw": request.form.get('rdw'),
             "alk_phos": request.form.get('alk_phos'),
             "wbc": request.form.get('wbc')
-        }
-
-        # Calculate phenotypic age
-        phenotypic_age = calculate_phenotypic_age(phenotypic_inputs)
+        })
 
         if phenotypic_age is None:
-            return "An error occurred while calculating your phenotypic age."
+            return "Error calculating biological age. Please check your inputs."
 
-        # Prepare user data for display
-        user_data = {
-            "age": int(age),
-            "sex": sex,
-            "height_cm": float(height),
-            "weight_kg": float(weight),
-            "phenotypic_age": phenotypic_age,
-            "biomarkers": phenotypic_inputs  # Include biomarkers in user data
-        }
+        # Generate insights using Gemini
+        try:
+            model = genai.GenerativeModel(model_name="models/gemini-1.5-pro")
+            analysis = model.generate_content(generate_prompt(user_data, "analysis")).text
+            meal_plan = model.generate_content(generate_prompt(user_data, "meal_plan")).text
+            exercise_plan = model.generate_content(generate_prompt(user_data, "exercise_plan")).text
+            supplements = model.generate_content(generate_prompt(user_data, "supplement_advice")).text
+            risks = model.generate_content(generate_prompt(user_data, "risk_assessment")).text
+        except Exception as e:
+            print(f"Gemini API error: {e}")
+            analysis = meal_plan = exercise_plan = supplements = risks = "Unable to generate AI insights at this time."
 
-        # Render results page
-        return render_template('results.html', user_data=user_data)
+        # Prepare marker insights
+        marker_insights = {}
+        for marker, value in biomarkers.items():
+            if value:  # Only get insights for provided values
+                marker_insights[marker] = get_marker_insight(marker, value)
 
-    except ValueError:
-        return "Invalid input. Please ensure all fields are correctly filled."
+        return render_template(
+            'results.html',
+            user_data=user_data,
+            analysis=analysis,
+            meal_plan=meal_plan,
+            exercise_plan=exercise_plan,
+            supplements=supplements,
+            risks=risks,
+            phenotypic_age=phenotypic_age,
+            marker_insights=marker_insights  # Pass the insights dictionary
+        )
 
-    # Generate Gemini prompt
-    prompt = generate_prompt(user_data)
-
-    try:
-        model = genai.GenerativeModel(model_name="models/gemini-1.5-pro")
-        response = model.generate_content(prompt)
-        feedback = response.text
+    except ValueError as e:
+        return f"Invalid input: {str(e)}"
     except Exception as e:
-        feedback = f"Something went wrong with Gemini: {e}"
-
-    return render_template(
-        'results.html',
-        user_data=user_data,
-        feedback=feedback,
-        phenotypic_age=phenotypic_age
-    )
+        return f"An error occurred: {str(e)}"
 
 if __name__ == '__main__':
     app.run(debug=True)
