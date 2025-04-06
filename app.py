@@ -2,31 +2,30 @@ from flask import Flask, render_template, request, jsonify
 import os
 import numpy as np
 from dotenv import load_dotenv
-from utils.prompt_builder import generate_prompt
+from utils.prompt_builder import generate_prompt  # Optional if you're using Gemini later
 
-# Load environment variables
+# Load environment variables (e.g., Gemini API key)
 load_dotenv()
 
 app = Flask(__name__)
 
-# --- ✅ Phenotypic Age Calculator ---
+# --- ✅ Phenotypic Age Formula (with unit conversion) ---
 def calculate_phenotypic_age(data):
     try:
-        # ✅ Unit conversions for Levine formula
         albumin = float(data["albumin"]) * 10            # g/dL → g/L
         creatinine = float(data["creatinine"]) * 88.4    # mg/dL → µmol/L
         glucose = float(data["glucose"]) / 18            # mg/dL → mmol/L
-        crp_raw = float(data["crp"]) / 10                # mg/L → mg/dL
-        crp = np.log(crp_raw if crp_raw > 0 else 0.01)   # avoid log(0)
+        crp_val = float(data["crp"]) / 10                # mg/L → mg/dL
+        crp = np.log(crp_val if crp_val > 0 else 0.01)   # log safe
 
-        lymph_pct = float(data["lymph_pct"])             # use as-is
+        lymph_pct = float(data["lymph_pct"])
         mcv = float(data["mcv"])
         rdw = float(data["rdw"])
         alk_phos = float(data["alk_phos"])
-        wbc = float(data["wbc"]) * 1000                  # ×10⁹/L → 1000 cells/μL
+        wbc = float(data["wbc"]) * 1000                  # ×10⁹/L → cells/μL
         age = float(data["age"])
 
-        # 🔬 Compute XB (Levine formula)
+        # --- XB Calculation ---
         xb = (
             -19.907
             - 0.0336 * albumin
@@ -41,23 +40,15 @@ def calculate_phenotypic_age(data):
             + 0.0804 * age
         )
 
-        # Clip XB to avoid extreme values
         xb = np.clip(xb, -30, 30)
-
-        # Compute M with adjusted scaling
         exp_xb = np.exp(xb)
         M = 1 - np.exp(-1.51714 * exp_xb / 0.0076927)
         M = np.clip(M, 1e-5, 1 - 1e-5)
 
-        # Compute phenotypic age
         phenotypic_age = 141.50 + (np.log(-0.00553 * np.log(1 - M))) / 0.09165
+        phenotypic_age = max(0, min(phenotypic_age, 120))  # Clamp to valid range
 
-        # ✅ Debug print
-        print(f"[DEBUG] xb = {xb:.2f}, exp_xb = {exp_xb:.2f}, M = {M:.6f}, Age = {phenotypic_age:.2f}")
-
-        # Ensure phenotypic age is within a reasonable range
-        phenotypic_age = max(0, min(phenotypic_age, 120))  # Clamp between 0 and 120
-
+        print(f"[DEBUG] XB = {xb:.2f}, M = {M:.6f}, PhenoAge = {phenotypic_age:.2f}")
         return round(phenotypic_age, 2)
 
     except Exception as e:
@@ -143,40 +134,14 @@ def get_advice():
 @app.route('/results', methods=['POST'])
 def results():
     try:
-        # Basic info
+        # Collect user input
         age = request.form.get('age')
         sex = request.form.get('sex')
         height = request.form.get('height')
         weight = request.form.get('weight')
 
-        # All biomarkers for display and analysis
-        biomarkers = {
-            "Glucose": request.form.get('glucose'),
-            "HDL": request.form.get('hdl'),
-            "LDL": request.form.get('ldl'),
-            "CRP": request.form.get('crp'),
-            "ALT": request.form.get('alt'),
-            "AST": request.form.get('ast'),
-            "Albumin": request.form.get('albumin'),
-            "Creatinine": request.form.get('creatinine'),
-            "Lymphocyte %": request.form.get('lymph_pct'),
-            "MCV": request.form.get('mcv'),
-            "RDW": request.form.get('rdw'),
-            "Alkaline Phosphatase": request.form.get('alk_phos'),
-            "WBC": request.form.get('wbc')
-        }
-
-        # Format data for Gemini AI
-        user_data = {
-            "age": int(age),
-            "sex": sex,
-            "height_cm": float(height),
-            "weight_kg": float(weight),
-            "biomarkers": {k: float(v) for k, v in biomarkers.items() if v}
-        }
-
-        # Calculate phenotypic age
-        phenotypic_age = calculate_phenotypic_age({
+        # Biomarkers for phenotypic age calculation
+        phenotypic_inputs = {
             "age": age,
             "albumin": request.form.get('albumin'),
             "creatinine": request.form.get('creatinine'),
@@ -187,45 +152,46 @@ def results():
             "rdw": request.form.get('rdw'),
             "alk_phos": request.form.get('alk_phos'),
             "wbc": request.form.get('wbc')
-        })
+        }
+
+        # Calculate phenotypic age
+        phenotypic_age = calculate_phenotypic_age(phenotypic_inputs)
 
         if phenotypic_age is None:
-            return "Error calculating biological age. Please check your inputs."
+            return "An error occurred while calculating your phenotypic age."
 
-        # Generate insights using Gemini
-        try:
-            model = genai.GenerativeModel(model_name="models/gemini-1.5-pro")
-            analysis = model.generate_content(generate_prompt(user_data, "analysis")).text
-            meal_plan = model.generate_content(generate_prompt(user_data, "meal_plan")).text
-            exercise_plan = model.generate_content(generate_prompt(user_data, "exercise_plan")).text
-            supplements = model.generate_content(generate_prompt(user_data, "supplement_advice")).text
-            risks = model.generate_content(generate_prompt(user_data, "risk_assessment")).text
-        except Exception as e:
-            print(f"Gemini API error: {e}")
-            analysis = meal_plan = exercise_plan = supplements = risks = "Unable to generate AI insights at this time."
+        # Prepare user data for display
+        user_data = {
+            "age": int(age),
+            "sex": sex,
+            "height_cm": float(height),
+            "weight_kg": float(weight),
+            "phenotypic_age": phenotypic_age,
+            "biomarkers": phenotypic_inputs  # Include biomarkers in user data
+        }
 
-        # Prepare marker insights
-        marker_insights = {}
-        for marker, value in biomarkers.items():
-            if value:  # Only get insights for provided values
-                marker_insights[marker] = get_marker_insight(marker, value)
+        # Render results page
+        return render_template('results.html', user_data=user_data)
 
-        return render_template(
-            'results.html',
-            user_data=user_data,
-            analysis=analysis,
-            meal_plan=meal_plan,
-            exercise_plan=exercise_plan,
-            supplements=supplements,
-            risks=risks,
-            phenotypic_age=phenotypic_age,
-            marker_insights=marker_insights  # Pass the insights dictionary
-        )
+    except ValueError:
+        return "Invalid input. Please ensure all fields are correctly filled."
 
-    except ValueError as e:
-        return f"Invalid input: {str(e)}"
+    # Generate Gemini prompt
+    prompt = generate_prompt(user_data)
+
+    try:
+        model = genai.GenerativeModel(model_name="models/gemini-1.5-pro")
+        response = model.generate_content(prompt)
+        feedback = response.text
     except Exception as e:
-        return f"An error occurred: {str(e)}"
+        feedback = f"Something went wrong with Gemini: {e}"
+
+    return render_template(
+        'results.html',
+        user_data=user_data,
+        feedback=feedback,
+        phenotypic_age=phenotypic_age
+    )
 
 if __name__ == '__main__':
     app.run(debug=True)
