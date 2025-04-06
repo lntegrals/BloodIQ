@@ -54,7 +54,7 @@ def results():
 
     # Use Gemini to generate feedback
     try:
-        model = genai.GenerativeModel("gemini-pro")
+        model = genai.GenerativeModel(model_name="models/gemini-1.5-pro")
         response = model.generate_content(prompt)
         feedback = response.text
     except Exception as e:
