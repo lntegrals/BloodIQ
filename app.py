@@ -11,7 +11,6 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = Flask(__name__)
 
-# --- Phenotypic Age Formula Function ---
 def calculate_phenotypic_age(data):
     albumin = float(data["albumin"])
     creatinine = float(data["creatinine"])
@@ -38,10 +37,17 @@ def calculate_phenotypic_age(data):
         + 0.0804 * age
     )
 
-    M = 1 - np.exp(-1.51714 * np.exp(xb) / 0.0076927)
-    phenotypic_age = 141.50 + (np.log(-0.00553 * np.log(1 - M))) / 0.09165
-
-    return round(phenotypic_age, 2)
+    # --- Clamping to prevent overflow ---
+    xb = np.clip(xb, -100, 100)
+    try:
+        exp_part = np.exp(xb)
+        M = 1 - np.exp(-1.51714 * exp_part / 0.0076927)
+        M = np.clip(M, 1e-10, 1 - 1e-10)  # Prevent log(0)
+        phenotypic_age = 141.50 + (np.log(-0.00553 * np.log(1 - M))) / 0.09165
+        return round(phenotypic_age, 2)
+    except Exception as e:
+        print(f"Phenotypic age error: {e}")
+        return "Calculation error"
 
 # --- Routes ---
 @app.route('/')
