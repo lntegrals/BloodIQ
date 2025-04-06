@@ -13,20 +13,29 @@ app = Flask(__name__)
 
 def calculate_phenotypic_age(data):
     try:
-        albumin = float(data["albumin"])
-        creatinine = float(data["creatinine"])
-        glucose = float(data["glucose"])
-        crp_val = float(data["crp"])
-        if crp_val <= 0:
-            raise ValueError("CRP must be > 0")
-        crp = np.log(crp_val)
+        # Raw inputs
+        albumin_g_dL = float(data["albumin"])
+        creatinine_mg_dL = float(data["creatinine"])
+        glucose_mg_dL = float(data["glucose"])
+        crp_mg_L = float(data["crp"])
         lymph_pct = float(data["lymph_pct"])
         mcv = float(data["mcv"])
         rdw = float(data["rdw"])
         alk_phos = float(data["alk_phos"])
-        wbc = float(data["wbc"])
+        wbc_x10_9_per_L = float(data["wbc"])
         age = float(data["age"])
 
+        # Convert units
+        albumin = albumin_g_dL * 10                  # g/L
+        creatinine = creatinine_mg_dL * 88.4         # µmol/L
+        glucose = glucose_mg_dL / 18                 # mmol/L
+        crp_val = crp_mg_L / 10                      # mg/dL
+        if crp_val <= 0:
+            raise ValueError("CRP must be > 0")
+        crp = np.log(crp_val)
+        wbc = wbc_x10_9_per_L * 1000                 # 1000 cells/uL
+
+        # XB calculation
         xb = (
             -19.907
             - 0.0336 * albumin
@@ -41,7 +50,7 @@ def calculate_phenotypic_age(data):
             + 0.0804 * age
         )
 
-        xb = np.clip(xb, -30, 30)  # Safe range
+        xb = np.clip(xb, -30, 30)
 
         exp_part = np.exp(xb)
         M = 1 - np.exp(-1.51714 * exp_part / 0.0076927)
