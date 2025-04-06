@@ -4,7 +4,7 @@ import numpy as np
 import google.generativeai as genai
 from dotenv import load_dotenv
 from utils.prompt_builder import generate_prompt
-from utils.phenotypic_age import calculate_phenotypic_age
+from utils.biological_age import calculate_biological_age
 
 # Load environment variables and configure Gemini
 load_dotenv()
@@ -134,8 +134,8 @@ def results():
             "wbc": request.form.get('wbc')
         }
 
-        # Calculate phenotypic age (will be included in AI analysis)
-        phenotypic_age = calculate_phenotypic_age(biomarkers)
+        # Calculate biological age (will be included in AI analysis)
+        biological_age = calculate_biological_age(biomarkers)
 
         # Prepare user data
         user_data = {
@@ -144,7 +144,7 @@ def results():
             "height_cm": float(height),
             "weight_kg": float(weight),
             "biomarkers": biomarkers,
-            "phenotypic_age": phenotypic_age  # Add to user_data for AI analysis
+            "phenotypic_age": biological_age  # Add to user_data for AI analysis
         }
 
         # Generate marker insights

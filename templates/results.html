@@ -163,7 +163,7 @@
             top: calc(100% + 10px);
             left: 0;
             right: 0;
-            background: rgba(0, 0, 0, 0.95);
+            background: #000000;
             padding: 15px;
             border-radius: 8px;
             border: 1px solid var(--primary-red);
@@ -278,19 +278,27 @@
         <div class="result-section">
             <h2 class="section-header">🧪 Blood Markers</h2>
             <div class="biomarker-grid">
-                {% for marker, value in user_data.biomarkers.items() %}
-                    {% set insight = marker_insights[marker] %}
+                {% for marker, data in marker_insights.items() %}
+                    {% if data and data.description %}
                     <div class="key-stat">
                         <div class="stat-label">{{ marker }}</div>
-                        <div class="stat-value">{{ value }}</div>
+                        <div class="value-highlight">{{ user_data.biomarkers[marker] }} {{ data.reference.unit }}</div>
                         <div class="marker-insight">
-                            <div>{{ insight.description }}</div>
-                            <div class="marker-range">Normal Range: {{ insight.range }}</div>
-                            <div class="marker-status {{ insight.status_class }}">
-                                {{ insight.status }}
-                            </div>
+                            <div><strong>{{ data.description }}</strong></div>
+                            <div class="marker-range">Normal Range: {{ data.range }}</div>
+                            <div class="marker-status {{ data.status_class }}">{{ data.status }}</div>
+                            {% if data.status != "Normal" %}
+                                <div class="mt-2">
+                                    {% if data.status == "Below Normal" %}
+                                    <small>⚠️ Consider ways to increase this value</small>
+                                    {% else %}
+                                    <small>⚠️ Consider ways to decrease this value</small>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
+                    {% endif %}
                 {% endfor %}
             </div>
         </div>
