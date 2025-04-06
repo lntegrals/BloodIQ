@@ -9,7 +9,54 @@
 <body>
     <h1>Welcome to BloodLens</h1>
     <div class="container">
-        <!-- Add your form and content here -->
+        <form action="/results" method="post">
+            <!-- Basic Info -->
+            <label for="age">Age:</label>
+            <input type="number" id="age" name="age" required>
+
+            <label for="sex">Sex:</label>
+            <select id="sex" name="sex" required>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>pip
+            </select>
+
+            <label for="height">Height (cm):</label>
+            <input type="number" id="height" name="height" required>
+
+            <label for="weight">Weight (kg):</label>
+            <input type="number" id="weight" name="weight" required>
+
+            <!-- Blood Markers -->
+            <label for="crp">C-Reactive Protein (mg/L):</label>
+            <input type="number" step="0.01" id="crp" name="crp" required>
+
+            <label for="albumin">Albumin (g/dL):</label>
+            <input type="number" step="0.1" id="albumin" name="albumin" required>
+
+            <label for="creatinine">Creatinine (mg/dL):</label>
+            <input type="number" step="0.01" id="creatinine" name="creatinine" required>
+
+            <label for="glucose">Glucose (mg/dL):</label>
+            <input type="number" step="1" id="glucose" name="glucose" required>
+
+            <label for="lymphs">Lymphocyte Percent (%):</label>
+            <input type="number" step="0.1" id="lymphs" name="lymphs" required>
+
+            <label for="mcv">Mean Cell Volume (fL):</label>
+            <input type="number" step="0.1" id="mcv" name="mcv" required>
+
+            <label for="rdw">Red Cell Distribution Width (%):</label>
+            <input type="number" step="0.1" id="rdw" name="rdw" required>
+
+            <label for="alk_phos">Alkaline Phosphatase (U/L):</label>
+            <input type="number" step="1" id="alk_phos" name="alk_phos" required>
+
+            <label for="wbc">White Blood Cell Count (×10⁹/L):</label>
+            <input type="number" step="0.1" id="wbc" name="wbc" required>
+
+            <button type="submit">Submit</button>
+        </form>
     </div>
 </body>
 </html>
