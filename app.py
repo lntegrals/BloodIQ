@@ -15,7 +15,7 @@ genai.configure(api_key=api_key)
 
 # Initialize Flask and Gemini model
 app = Flask(__name__)
-model = genai.GenerativeModel('models/gemini-2.0-flash-lite')
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 def get_marker_info(marker):
     """Get reference ranges and descriptions for biomarkers"""
