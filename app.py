@@ -4,7 +4,7 @@ import numpy as np
 import google.generativeai as genai
 from dotenv import load_dotenv
 from utils.prompt_builder import generate_prompt
-from utils.phenotypic_age import calculate_phenotypic_age  # Add this import
+from utils.phenotypic_age import calculate_phenotypic_age
 
 # Load environment variables and configure Gemini
 load_dotenv()
@@ -23,56 +23,23 @@ def index():
 
 @app.route('/get_advice', methods=['POST'])
 def get_advice():
-    advice_type = request.form.get('type')
-    user_data = request.form.get('user_data')
-    
-    prompt = generate_prompt(user_data, advice_type)
     try:
+        advice_type = request.form.get('type')
+        user_data = request.form.get('user_data')
+
+        if not advice_type or not user_data:
+            return jsonify({'error': 'Missing required fields: type or user_data'}), 400
+
+        prompt = generate_prompt(user_data, advice_type)
         response = model.generate_content(prompt)
         return jsonify({'advice': response.text})
     except Exception as e:
-        return jsonify({'error': str(e)})
-
-def get_marker_insight(marker, value):
-    insights = {
-        "Glucose": {
-            "range": "70-99 mg/dL",
-            "description": "Glucose is your blood sugar level. It's crucial for energy but high levels can indicate diabetes risk.",
-            "thresholds": {"low": 70, "high": 99}
-        },
-        # Add other markers here
-    }
-
-    if marker not in insights:
-        return {"range": "N/A", "description": "No detailed information available.", "status": "Unknown", "status_class": ""}
-
-    try:
-        info = insights[marker]
-        value = float(value)
-        
-        if value < info["thresholds"]["low"]:
-            status = "Below Normal"
-            status_class = "status-low"
-        elif value > info["thresholds"]["high"]:
-            status = "Above Normal"
-            status_class = "status-high"
-        else:
-            status = "Normal"
-            status_class = "status-normal"
-
-        return {
-            "range": info["range"],
-            "description": info["description"],
-            "status": status,
-            "status_class": status_class
-        }
-    except (ValueError, TypeError):
-        return {"range": "N/A", "description": "Invalid value provided.", "status": "Unknown", "status_class": ""}
+        return jsonify({'error': f"Failed to generate advice: {str(e)}"}), 500
 
 @app.route('/results', methods=['POST'])
 def results():
     try:
-        # Collect general info
+        # Collect user input
         age = request.form.get('age')
         sex = request.form.get('sex')
         height = request.form.get('height')
@@ -108,21 +75,13 @@ def results():
             "biomarkers": phenotypic_inputs  # Include biomarkers in user data
         }
 
-        # Prepare marker insights
-        marker_insights = {}
-        for marker, value in user_data["biomarkers"].items():
-            marker_insights[marker] = get_marker_insight(marker, str(value))
-
-        # Generate all AI insights first
+        # Generate AI insights
         try:
-            # Use existing model instance
             analysis = model.generate_content(generate_prompt(user_data, "analysis")).text
             meal_plan = model.generate_content(generate_prompt(user_data, "meal_plan")).text
             exercise_plan = model.generate_content(generate_prompt(user_data, "exercise_plan")).text
             supplements = model.generate_content(generate_prompt(user_data, "supplement_advice")).text
             risks = model.generate_content(generate_prompt(user_data, "risk_assessment")).text
-            
-            print("✅ Successfully generated Gemini insights")
         except Exception as e:
             print(f"❌ Gemini API error: {str(e)}")
             analysis = meal_plan = exercise_plan = supplements = risks = "AI insights temporarily unavailable"
@@ -131,8 +90,6 @@ def results():
         return render_template(
             'results.html',
             user_data=user_data,
-            marker_insights=marker_insights,  # Pass marker insights to template
-            phenotypic_age=phenotypic_age,
             analysis=analysis,
             meal_plan=meal_plan,
             exercise_plan=exercise_plan,
@@ -140,9 +97,10 @@ def results():
             risks=risks
         )
 
+    except ValueError:
+        return "Invalid input. Please ensure all fields are correctly filled."
     except Exception as e:
-        print(f"❌ Error in results route: {str(e)}")
-        return f"An error occurred: {str(e)}"
+        return f"An error occurred: {e}"
 
 if __name__ == '__main__':
     app.run(debug=True)
