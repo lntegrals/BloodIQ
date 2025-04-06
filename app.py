@@ -67,7 +67,7 @@ def index():
 def results():
     # Collect general inputs
     age = request.form.get('age')
-    sex = request.form.get('sex")
+    sex = request.form.get("sex")
     height = request.form.get('height')
     weight = request.form.get('weight')
 
