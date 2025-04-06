@@ -95,6 +95,9 @@ def results():
         # Calculate phenotypic age
         phenotypic_age = calculate_phenotypic_age(phenotypic_inputs)
 
+        if phenotypic_age is None:
+            return "An error occurred while calculating your phenotypic age."
+
         # Prepare user data for display
         user_data = {
             "age": int(age),
