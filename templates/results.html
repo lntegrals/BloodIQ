@@ -314,16 +314,26 @@
                 </div>
                 <div class="text-center mx-4">
                     <h3 class="mb-2">Biological Age</h3>
-                    <div class="value-highlight" style="font-size: 2.5rem;">{{ biological_age }}</div>
+                    <div class="value-highlight" style="font-size: 2.5rem;">
+                        {% if biological_age is defined and biological_age %}
+                            {{ biological_age }}
+                        {% else %}
+                            --
+                        {% endif %}
+                    </div>
                     <small class="text-muted">Years</small>
                 </div>
             </div>
             <div class="insights-text">
-                Based on your blood markers, your biological age is {{ "lower" if biological_age < user_data.age else "higher" }} than your chronological age. 
-                {% if biological_age < user_data.age %}
-                    This suggests your body is aging slower than average, indicating good health practices!
+                {% if biological_age is defined and biological_age %}
+                    Based on your blood markers, your biological age is {{ "lower" if biological_age < user_data.age else "higher" }} than your chronological age. 
+                    {% if biological_age < user_data.age %}
+                        This suggests your body is aging slower than average, indicating good health practices!
+                    {% else %}
+                        This suggests some health factors may be accelerating your aging process. Review the detailed insights below for improvement areas.
+                    {% endif %}
                 {% else %}
-                    This suggests some health factors may be accelerating your aging process. Review the detailed insights below for improvement areas.
+                    Biological age calculation is currently unavailable. Please ensure all required blood markers are provided for a complete analysis.
                 {% endif %}
             </div>
         </div>
