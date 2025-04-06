@@ -160,6 +160,15 @@
       text-decoration: none;
       cursor: help;
     }
+
+    .biomarker-group-title {
+      color: var(--primary-red);
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 25px 0 10px;
+      padding-left: 10px;
+      border-left: 3px solid var(--primary-red);
+    }
   </style>
 </head>
 <body>
@@ -214,20 +223,42 @@
 
       <div class="section-title">Biomarkers</div>
       <div class="row g-3">
+        <!-- Metabolic Markers -->
+        <div class="col-12"><div class="biomarker-group-title">Metabolic Health</div></div>
         {% for field, label, tooltip in [
-          ('glucose', 'Glucose (mg/dL)', 'Blood sugar level 🧁'),
-          ('hdl', 'HDL (mg/dL)', 'Good cholesterol ❤️'),
-          ('ldl', 'LDL (mg/dL)', 'Bad cholesterol 🚫'),
-          ('crp', 'C-Reactive Protein (mg/L)', 'Inflammation marker 🔥'),
-          ('alt', 'ALT (U/L)', 'Liver enzyme 🧪'),
-          ('ast', 'AST (U/L)', 'Liver enzyme 🧬'),
-          ('albumin', 'Albumin (g/dL)', 'Protein for transport 🚚'),
-          ('creatinine', 'Creatinine (mg/dL)', 'Kidney function 🧼'),
-          ('lymph_pct', 'Lymphocyte Percent (%)', 'Immune defense 🛡️'),
-          ('mcv', 'Mean Cell Volume (fL)', 'Red cell size 📏'),
-          ('rdw', 'Red Cell Distribution Width (%)', 'Red cell variation 🔬'),
-          ('alk_phos', 'Alkaline Phosphatase (U/L)', 'Liver & bone enzyme 🔧'),
-          ('wbc', 'White Blood Cell Count (×10⁹/L)', 'Immune strength 🚨')
+          ('glucose', 'Glucose (mg/dL)', 'Blood sugar level - key indicator of metabolic health 🧁'),
+          ('hdl', 'HDL (mg/dL)', 'Good cholesterol - helps remove other forms of cholesterol ❤️'),
+          ('ldl', 'LDL (mg/dL)', 'Bad cholesterol - can build up in arteries 🚫')
+        ] %}
+        <div class="col-md-4">
+          <label class="form-label tooltip-custom" title="{{ tooltip }}">{{ label }}</label>
+          <input type="number" name="{{ field }}" class="form-control" step="any" placeholder="Enter value">
+        </div>
+        {% endfor %}
+
+        <!-- Inflammation & Liver -->
+        <div class="col-12"><div class="biomarker-group-title">Inflammation & Liver Function</div></div>
+        {% for field, label, tooltip in [
+          ('crp', 'C-Reactive Protein (mg/L)', 'Inflammation marker - indicates systemic inflammation 🔥'),
+          ('alt', 'ALT (U/L)', 'Liver enzyme - elevated in liver stress 🧪'),
+          ('ast', 'AST (U/L)', 'Liver enzyme - indicates liver health 🧬'),
+          ('alk_phos', 'Alkaline Phosphatase (U/L)', 'Enzyme important for liver and bone health 🔧')
+        ] %}
+        <div class="col-md-4">
+          <label class="form-label tooltip-custom" title="{{ tooltip }}">{{ label }}</label>
+          <input type="number" name="{{ field }}" class="form-control" step="any" placeholder="Enter value">
+        </div>
+        {% endfor %}
+
+        <!-- Blood Components -->
+        <div class="col-12"><div class="biomarker-group-title">Blood Components & Function</div></div>
+        {% for field, label, tooltip in [
+          ('albumin', 'Albumin (g/dL)', 'Important protein for maintaining blood volume 🚚'),
+          ('creatinine', 'Creatinine (mg/dL)', 'Kidney function marker 🧼'),
+          ('lymph_pct', 'Lymphocyte % (%)', 'White blood cells - immune system health 🛡️'),
+          ('mcv', 'Mean Cell Volume (fL)', 'Average red blood cell size 📏'),
+          ('rdw', 'RDW (%)', 'Red blood cell size variation 🔬'),
+          ('wbc', 'WBC Count (×10⁹/L)', 'Overall immune system strength 🚨')
         ] %}
         <div class="col-md-4">
           <label class="form-label tooltip-custom" title="{{ tooltip }}">{{ label }}</label>

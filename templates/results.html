@@ -128,11 +128,45 @@
 
         .insights-text {
             color: #ddd;
-            line-height: 1.6;
+            line-height: 1.8;
+            font-size: 1.05rem;
             white-space: pre-wrap;
-            padding: 15px;
+            padding: 25px;
             background: rgba(0,0,0,0.2);
             border-radius: 12px;
+        }
+
+        .key-stat {
+            background: linear-gradient(145deg, rgba(255,75,92,0.1), rgba(255,75,92,0.05));
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255,75,92,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .key-stat:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary-red);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--primary-red);
+        }
+
+        .biomarker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -183,25 +217,23 @@
             </div>
         </div>
 
-        <!-- Biomarkers Section -->
+        <!-- Updated Biomarkers Section -->
         <div class="result-section">
             <h2 class="section-header">🧪 Blood Markers</h2>
-            <div class="row g-3">
+            <div class="biomarker-grid">
                 {% for marker, value in user_data.biomarkers.items() %}
-                <div class="col-md-4">
-                    <div class="biomarker-item">
-                        <span>{{ marker }}</span>
-                        <span class="value-highlight">{{ value }}</span>
-                    </div>
+                <div class="key-stat">
+                    <div class="stat-label">{{ marker }}</div>
+                    <div class="stat-value">{{ value }}</div>
                 </div>
                 {% endfor %}
             </div>
         </div>
 
-        <!-- AI Insights Section -->
+        <!-- Enhanced AI Insights Section -->
         <div class="result-section">
-            <h2 class="section-header">💡 AI Health Insights</h2>
-            <div class="insights-text">{{ feedback }}</div>
+            <h2 class="section-header">💡 Health Analysis</h2>
+            <div class="insights-text">{{ feedback | safe }}</div>
         </div>
 
         <div class="text-center mt-4">
