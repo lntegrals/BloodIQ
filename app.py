@@ -6,20 +6,21 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 from utils.prompt_builder import generate_prompt
 
-# Load environment variables
+# Load API key from .env
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = Flask(__name__)
 
-# --- Phenotypic Age Formula (Stable + Validated) ---
+# --- Corrected Phenotypic Age Formula ---
 def calculate_phenotypic_age(data):
     try:
+        # Extract and convert values
         albumin = float(data["albumin"])
         creatinine = float(data["creatinine"])
         glucose = float(data["glucose"])
         crp_raw = float(data["crp"])
-        crp = np.log(crp_raw if crp_raw > 0 else 0.01)  # avoid log(0)
+        crp = np.log(crp_raw if crp_raw > 0 else 0.01)  # prevent log(0)
         lymph_pct = float(data["lymph_pct"])
         mcv = float(data["mcv"])
         rdw = float(data["rdw"])
@@ -27,6 +28,7 @@ def calculate_phenotypic_age(data):
         wbc = float(data["wbc"])
         age = float(data["age"])
 
+        # Compute xb
         xb = (
             -19.907
             - 0.0336 * albumin
@@ -41,21 +43,21 @@ def calculate_phenotypic_age(data):
             + 0.0804 * age
         )
 
-        exp_xb = np.exp(xb)
-        M = 1 - np.exp(-1.51714 * exp_xb / 0.0076927)
+        # Compute M
+        M = 1 - np.exp(-1.51714 * np.exp(xb) / 0.0076927)
 
-        # Validate M to avoid log(0) or negative input
+        # Clamp M to avoid math errors
         if M >= 1.0:
             M = 0.999999
         elif M <= 0.0:
             M = 0.000001
 
+        # Compute final Phenotypic Age
         phenotypic_age = 141.50 + (np.log(-0.00553 * np.log(1 - M))) / 0.09165
-
         return round(phenotypic_age, 2)
 
     except Exception as e:
-        print("[ERROR] Phenotypic age calculation failed:", e)
+        print("[ERROR] Phenotypic Age calculation failed:", e)
         return None
 
 # --- Routes ---
@@ -65,13 +67,13 @@ def index():
 
 @app.route('/results', methods=['POST'])
 def results():
-    # Collect general inputs
+    # Basic info
     age = request.form.get('age')
     sex = request.form.get('sex')
     height = request.form.get('height')
     weight = request.form.get('weight')
 
-    # Biomarkers for Gemini
+    # Biomarkers for Gemini AI
     biomarkers = {
         "Glucose": request.form.get('glucose'),
         "HDL": request.form.get('hdl'),
@@ -82,6 +84,7 @@ def results():
     }
 
     try:
+        # Format for Gemini prompt
         user_data = {
             "age": int(age),
             "sex": sex,
@@ -90,7 +93,7 @@ def results():
             "biomarkers": {k: float(v) for k, v in biomarkers.items() if v}
         }
 
-        # Inputs needed for phenotypic age
+        # Inputs for Phenotypic Age
         phenotypic_inputs = {
             "age": age,
             "albumin": request.form.get('albumin'),
@@ -107,12 +110,11 @@ def results():
         phenotypic_age = calculate_phenotypic_age(phenotypic_inputs)
 
     except ValueError:
-        return "Invalid input. Please ensure all fields are numbers."
+        return "Invalid input. Please ensure all fields are correctly filled."
 
-    # Prompt for Gemini
+    # Generate Gemini prompt
     prompt = generate_prompt(user_data)
 
-    # Gemini response
     try:
         model = genai.GenerativeModel(model_name="models/gemini-1.5-pro")
         response = model.generate_content(prompt)
