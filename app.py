@@ -92,6 +92,31 @@ def get_marker_info(marker):
         'thresholds': {'low': 0, 'high': 999999}
     })
 
+def calculate_biological_age(markers, chronological_age):
+    # Simple biological age calculation based on key markers
+    # This is a basic example - real calculations would be more complex
+    age_modifier = 0
+    
+    if 'glucose' in markers:
+        glucose = float(markers['glucose'])
+        if glucose > 100:
+            age_modifier += (glucose - 100) / 10
+        elif glucose < 70:
+            age_modifier += (70 - glucose) / 5
+
+    if 'cholesterol' in markers:
+        cholesterol = float(markers['cholesterol'])
+        if cholesterol > 200:
+            age_modifier += (cholesterol - 200) / 20
+
+    if 'blood_pressure' in markers:
+        bp = float(markers['blood_pressure'])
+        if bp > 120:
+            age_modifier += (bp - 120) / 10
+
+    biological_age = chronological_age + age_modifier
+    return round(biological_age, 1)
+
 @app.route('/')
 def index():
     return render_template('index.html')
