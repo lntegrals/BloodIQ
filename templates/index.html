@@ -14,35 +14,38 @@
       background-size: 45px 45px;
     }
 
-    .form-card {
-      background: linear-gradient(145deg, #111113, #1a1a1d);
-      padding: 50px;
-      border-radius: 30px;
-      max-width: 1000px;
-      margin: 90px auto;
-      box-shadow: 0 0 100px rgba(255, 20, 60, 0.09);
-      position: relative;
-      z-index: 2;
-    }
-
+    /* Updated logo styles */
     .logo {
-      width: 80px;
+      width: 65px;
       position: absolute;
-      top: -40px;
-      left: 20px;
-      filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.3));
-      animation: float 3s ease-in-out infinite;
+      top: -32px;
+      left: 30px;
+      filter: drop-shadow(0 0 15px rgba(255, 0, 0, 0.2));
+      animation: float 4s ease-in-out infinite;
       z-index: 10;
-      transition: transform 0.3s ease;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     .logo:hover {
-      transform: scale(1.1) rotate(-5deg);
+      transform: scale(1.15) rotate(-8deg);
+      filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.3));
     }
 
     @keyframes float {
       0%, 100% { transform: translateY(0) rotate(0deg); }
       50% { transform: translateY(-8px) rotate(3deg); }
+    }
+
+    /* Updated card styles */
+    .form-card {
+      background: linear-gradient(160deg, #111113, #1a1a1d);
+      padding: 60px 50px;
+      border-radius: 32px;
+      max-width: 1100px;
+      margin: 80px auto;
+      box-shadow: 
+        0 0 100px rgba(255, 20, 60, 0.07),
+        0 0 250px rgba(255, 20, 60, 0.05);
     }
 
     h1.gradient-text {
@@ -134,6 +137,25 @@
       transform: scale(0.97);
     }
 
+    /* New sample data button */
+    .btn-sample {
+      background: transparent;
+      color: var(--primary-red);
+      font-weight: 600;
+      border: 2px solid rgba(255, 75, 92, 0.3);
+      padding: 16px 30px;
+      font-size: 1.05rem;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+      margin-left: 15px;
+    }
+
+    .btn-sample:hover {
+      border-color: var(--primary-red);
+      background: rgba(255, 75, 92, 0.1);
+      transform: translateY(-2px);
+    }
+
     .tooltip-custom {
       text-decoration: none;
       cursor: help;
@@ -142,22 +164,26 @@
 </head>
 <body>
   <div class="form-card">
-    <!-- Blood Drop Logo -->
+    <!-- Sleeker logo -->
     <svg class="logo" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="dropGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color:#ff3333"/>
+          <stop offset="0%" style="stop-color:#ff2b2b"/>
           <stop offset="100%" style="stop-color:#ff0000"/>
         </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
       </defs>
-      <path d="M50 0 C50 0 0 50 0 85 C0 105 20 120 50 120 C80 120 100 105 100 85 C100 50 50 0 50 0Z" 
-            fill="url(#dropGradient)"/>
-      <!-- Smirk -->
-      <path d="M35 75 Q50 85 65 75" stroke="white" stroke-width="3" fill="none"/>
-      <!-- Eyes -->
-      <circle cx="35" cy="60" r="3" fill="white"/>
-      <path d="M62 57 L68 63" stroke="white" stroke-width="3" stroke-linecap="round"/>
-      <path d="M68 57 L62 63" stroke="white" stroke-width="3" stroke-linecap="round"/>
+      <path d="M50 5 C50 5 5 50 5 85 C5 105 25 115 50 115 C75 115 95 105 95 85 C95 50 50 5 50 5Z" 
+            fill="url(#dropGradient)" filter="url(#glow)"/>
+      <path d="M35 75 Q50 82 65 75" stroke="white" stroke-width="2.5" fill="none"/>
+      <circle cx="35" cy="60" r="2.5" fill="white"/>
+      <path d="M62 57 L68 63M68 57 L62 63" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
     </svg>
 
     <h1 class="gradient-text">Welcome to BloodLens</h1>
@@ -212,9 +238,42 @@
 
       <div class="text-center mt-4">
         <button type="submit" class="btn btn-analyze">🔬 Analyze My Blood</button>
+        <button type="button" onclick="fillSampleData()" class="btn btn-sample">📋 Load Sample Data</button>
       </div>
     </form>
   </div>
+
+  <script>
+    function fillSampleData() {
+      const sampleData = {
+        age: 35,
+        sex: 'Male',
+        height: 175,
+        weight: 70,
+        glucose: 85,
+        hdl: 55,
+        ldl: 100,
+        crp: 1.5,
+        alt: 25,
+        ast: 23,
+        albumin: 4.2,
+        creatinine: 0.9,
+        lymph_pct: 30,
+        mcv: 90,
+        rdw: 13,
+        alk_phos: 70,
+        wbc: 7.2
+      };
+
+      Object.entries(sampleData).forEach(([field, value]) => {
+        const input = document.querySelector(`[name="${field}"]`);
+        if (input) {
+          input.value = value;
+          input.dispatchEvent(new Event('change'));
+        }
+      });
+    }
+  </script>
 </body>
 </html>
 
