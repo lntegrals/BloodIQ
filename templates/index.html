@@ -5,14 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BloodLens</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 15px;
+        }
+        input, select {
+            width: 100%;
+            padding: 0.5rem;
+            margin-top: 5px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #1e40af;
+        }
+    </style>
 </head>
 <body>
     <h1>Welcome to BloodLens</h1>
     <div class="container">
         <form action="/results" method="post">
             <!-- Basic Info -->
-            <label for="age">Age:</label>
-            <input type="number" id="age" name="age" required>
+            <label for="age">Age (years):</label>
+            <input type="number" id="age" name="age" min="1" max="120" placeholder="e.g. 45" required>
 
             <label for="sex">Sex:</label>
             <select id="sex" name="sex" required>
@@ -22,38 +67,38 @@
             </select>
 
             <label for="height">Height (cm):</label>
-            <input type="number" id="height" name="height" required>
+            <input type="number" id="height" name="height" min="100" max="250" placeholder="e.g. 178" required>
 
             <label for="weight">Weight (kg):</label>
-            <input type="number" id="weight" name="weight" required>
+            <input type="number" id="weight" name="weight" min="30" max="200" placeholder="e.g. 82" required>
 
             <!-- Blood Markers -->
             <label for="crp">C-Reactive Protein (mg/L):</label>
-            <input type="number" step="0.01" id="crp" name="crp" required>
+            <input type="number" step="0.01" min="0.1" max="50" id="crp" name="crp" placeholder="e.g. 0.9" required>
 
             <label for="albumin">Albumin (g/dL):</label>
-            <input type="number" step="0.1" id="albumin" name="albumin" required>
+            <input type="number" step="0.1" min="2" max="6" id="albumin" name="albumin" placeholder="e.g. 4.2" required>
 
             <label for="creatinine">Creatinine (mg/dL):</label>
-            <input type="number" step="0.01" id="creatinine" name="creatinine" required>
+            <input type="number" step="0.01" min="0.4" max="2.0" id="creatinine" name="creatinine" placeholder="e.g. 1.0" required>
 
             <label for="glucose">Glucose (mg/dL):</label>
-            <input type="number" step="1" id="glucose" name="glucose" required>
+            <input type="number" step="1" min="60" max="300" id="glucose" name="glucose" placeholder="e.g. 90" required>
 
             <label for="lymph_pct">Lymphocyte Percent (%):</label>
-            <input type="number" step="0.1" id="lymph_pct" name="lymph_pct" required>
+            <input type="number" step="0.1" min="10" max="60" id="lymph_pct" name="lymph_pct" placeholder="e.g. 30" required>
 
             <label for="mcv">Mean Cell Volume (fL):</label>
-            <input type="number" step="0.1" id="mcv" name="mcv" required>
+            <input type="number" step="0.1" min="75" max="110" id="mcv" name="mcv" placeholder="e.g. 90" required>
 
             <label for="rdw">Red Cell Distribution Width (%):</label>
-            <input type="number" step="0.1" id="rdw" name="rdw" required>
+            <input type="number" step="0.1" min="11" max="18" id="rdw" name="rdw" placeholder="e.g. 13.5" required>
 
             <label for="alk_phos">Alkaline Phosphatase (U/L):</label>
-            <input type="number" step="1" id="alk_phos" name="alk_phos" required>
+            <input type="number" step="1" min="30" max="150" id="alk_phos" name="alk_phos" placeholder="e.g. 70" required>
 
             <label for="wbc">White Blood Cell Count (×10⁹/L):</label>
-            <input type="number" step="0.1" id="wbc" name="wbc" required>
+            <input type="number" step="0.1" min="3" max="12" id="wbc" name="wbc" placeholder="e.g. 6.5" required>
 
             <button type="submit">Submit</button>
         </form>
