@@ -1,0 +1,12 @@
+# Don't track Python cache or virtual environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+
+# Don't track your Gemini API key
+.env
+
+# VS Code settings (optional, personal)
+.vscode/
