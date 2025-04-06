@@ -92,25 +92,26 @@ def get_marker_info(marker):
         'thresholds': {'low': 0, 'high': 999999}
     })
 
-def calculate_biological_age(markers, chronological_age):
-    # Simple biological age calculation based on key markers
-    # This is a basic example - real calculations would be more complex
+def calculate_biological_age(blood_markers):
+    # Get chronological age from the markers dictionary
+    chronological_age = float(blood_markers.get('age', 0))
     age_modifier = 0
     
-    if 'glucose' in markers:
-        glucose = float(markers['glucose'])
+    # Calculate modifiers based on available markers
+    if 'glucose' in blood_markers:
+        glucose = float(blood_markers['glucose'])
         if glucose > 100:
             age_modifier += (glucose - 100) / 10
         elif glucose < 70:
             age_modifier += (70 - glucose) / 5
 
-    if 'cholesterol' in markers:
-        cholesterol = float(markers['cholesterol'])
+    if 'cholesterol' in blood_markers:
+        cholesterol = float(blood_markers['cholesterol'])
         if cholesterol > 200:
             age_modifier += (cholesterol - 200) / 20
 
-    if 'blood_pressure' in markers:
-        bp = float(markers['blood_pressure'])
+    if 'blood_pressure' in blood_markers:
+        bp = float(blood_markers['blood_pressure'])
         if bp > 120:
             age_modifier += (bp - 120) / 10
 
