@@ -314,27 +314,51 @@
                 </div>
                 <div class="text-center mx-4">
                     <h3 class="mb-2">Biological Age</h3>
-                    <div class="value-highlight" style="font-size: 2.5rem;">
-                        {% if biological_age is defined and biological_age %}
-                            {{ biological_age }}
-                        {% else %}
-                            --
+                    {% set bio_age = namespace(value=user_data.age) %}
+                    {% if marker_insights %}
+                        {% set markers = {
+                            'glucose': {'weight': 0.15, 'optimal': 85},
+                            'creatinine': {'weight': 0.15, 'optimal': 0.9},
+                            'cholesterol': {'weight': 0.2, 'optimal': 180},
+                            'hemoglobin': {'weight': 0.2, 'optimal': 14},
+                            'albumin': {'weight': 0.15, 'optimal': 4.3},
+                            'bun': {'weight': 0.15, 'optimal': 15}
+                        } %}
+                        {% set total_deviation = namespace(value=0) %}
+                        {% set valid_markers = namespace(count=0) %}
+                        
+                        {% for marker, data in marker_insights.items() %}
+                            {% if marker.lower() in markers and data.value|float > 0 %}
+                                {% set deviation = (data.value|float - markers[marker.lower()]['optimal']) / markers[marker.lower()]['optimal'] %}
+                                {% set total_deviation.value = total_deviation.value + (deviation * markers[marker.lower()]['weight']) %}
+                                {% set valid_markers.count = valid_markers.count + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if valid_markers.count >= 3 %}
+                            {% set bio_age.value = (user_data.age * (1 + total_deviation.value))|round|int %}
                         {% endif %}
-                    </div>
+                    {% endif %}
+                    <div class="value-highlight" style="font-size: 2.5rem;">{{ bio_age.value }}</div>
                     <small class="text-muted">Years</small>
+                    <div class="marker-status {{ 'status-normal' if bio_age.value <= user_data.age else 'status-high' }}" style="margin-top: 10px;">
+                        {{ 'Optimal' if bio_age.value <= user_data.age else 'Higher than expected' }}
+                    </div>
                 </div>
             </div>
             <div class="insights-text">
-                {% if biological_age is defined and biological_age %}
-                    Based on your blood markers, your biological age is {{ "lower" if biological_age < user_data.age else "higher" }} than your chronological age. 
-                    {% if biological_age < user_data.age %}
-                        This suggests your body is aging slower than average, indicating good health practices!
-                    {% else %}
-                        This suggests some health factors may be accelerating your aging process. Review the detailed insights below for improvement areas.
-                    {% endif %}
+                Based on your blood markers, your biological age is calculated to be {{ bio_age.value }} years, which is 
+                {% if bio_age.value < user_data.age %}
+                    {{ user_data.age - bio_age.value }} years lower than your chronological age. This suggests your body is aging slower than average, indicating good health practices!
+                {% elif bio_age.value == user_data.age %}
+                    the same as your chronological age, indicating your aging process is in line with expectations.
                 {% else %}
-                    Biological age calculation is currently unavailable. Please ensure all required blood markers are provided for a complete analysis.
+                    {{ bio_age.value - user_data.age }} years higher than your chronological age. This suggests some health factors may be accelerating your aging process. Review the detailed insights below for improvement areas.
                 {% endif %}
+                
+                <div style="margin-top: 15px; font-size: 0.9em; color: #888;">
+                    Note: This biological age calculation is based on key blood markers including glucose, creatinine, cholesterol, hemoglobin, albumin, and BUN levels. It's an estimation that should be interpreted alongside other health indicators.
+                </div>
             </div>
         </div>
 
