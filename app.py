@@ -101,7 +101,8 @@ def results():
             "sex": sex,
             "height_cm": float(height),
             "weight_kg": float(weight),
-            "phenotypic_age": phenotypic_age
+            "phenotypic_age": phenotypic_age,
+            "biomarkers": phenotypic_inputs  # Include biomarkers in user data
         }
 
         # Render results page
