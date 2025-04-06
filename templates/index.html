@@ -166,8 +166,10 @@
       font-size: 1.1rem;
       font-weight: 600;
       margin: 25px 0 10px;
-      padding-left: 10px;
-      border-left: 3px solid var(--primary-red);
+      padding: 10px 0;
+      border-top: 1px solid rgba(255, 105, 180, 0.1);
+      border-bottom: 1px solid rgba(255, 105, 180, 0.1);
+      background: linear-gradient(to right, rgba(255, 182, 193, 0.03), transparent);
     }
 
     /* Health Analysis Box Styles */
@@ -206,7 +208,7 @@
     </svg>
 
     <h1 class="gradient-text">Welcome to BloodLens</h1>
-    <p class="subtitle">Let’s see what your blood is cookin’ 😏</p>
+    <p class="subtitle">Find out how old your body really is — Powered by your blood</p>
 
     <form method="POST" action="/results">
       <div class="row mb-4">
@@ -294,8 +296,8 @@
       const sampleData = {
         age: 35,
         sex: 'Male',
-        height: 175,
-        weight: 70,
+        height: 175,  // Changed back to cm
+        weight: 70,   // Changed back to kg
         glucose: 85,
         hdl: 55,
         ldl: 100,
@@ -322,7 +324,6 @@
   </script>
 </body>
 </html>
-
 
 
 

@@ -93,11 +93,9 @@ def get_marker_info(marker):
     })
 
 def calculate_biological_age(blood_markers):
-    # Get chronological age from the markers dictionary
     chronological_age = float(blood_markers.get('age', 0))
     age_modifier = 0
     
-    # Calculate modifiers based on available markers
     if 'glucose' in blood_markers:
         glucose = float(blood_markers['glucose'])
         if glucose > 100:
@@ -163,14 +161,14 @@ def results():
         # Calculate biological age (will be included in AI analysis)
         biological_age = calculate_biological_age(biomarkers)
 
-        # Prepare user data
+        # Prepare user data with metric units
         user_data = {
             "age": int(age),
             "sex": sex,
             "height_cm": float(height),
             "weight_kg": float(weight),
             "biomarkers": biomarkers,
-            "phenotypic_age": biological_age  # Add to user_data for AI analysis
+            "phenotypic_age": biological_age
         }
 
         # Generate marker insights
