@@ -1,60 +1,192 @@
-<!-- templates/results.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>BloodIQ Results</title>
+    <title>BloodLens | Analysis Results</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #ff1a1a;
+            --glow-red: rgba(255, 0, 0, 0.2);
+            --dark-bg: #0b0b0d;
+            --card-bg: #111113;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: #f2f2f2;
+            font-family: 'Segoe UI', sans-serif;
+            overflow-x: hidden;
+            background-image: radial-gradient(rgba(255,0,50,0.06) 1px, transparent 1px);
+            background-size: 45px 45px;
+        }
+
+        .results-card {
+            background: linear-gradient(145deg, var(--card-bg), #1a1a1d);
+            padding: 50px;
+            border-radius: 30px;
+            max-width: 1000px;
+            margin: 90px auto;
+            box-shadow: 0 0 100px rgba(255, 20, 60, 0.09);
+            position: relative;
+            z-index: 2;
+        }
+
+        .gradient-text {
+            font-size: 3.2rem;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(90deg, #ff0033, #ff4d4d, #ff8c66, #ff0033);
+            background-size: 300% auto;
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: wave 6s linear infinite;
+        }
+
+        @keyframes wave {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        .result-section {
+            background: rgba(26, 26, 28, 0.6);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #333;
+            transition: all 0.3s ease;
+        }
+
+        .result-section:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.1);
+            border-color: var(--primary-red);
+        }
+
+        .section-header {
+            color: var(--primary-red);
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        .biomarker-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #222;
+            transition: background-color 0.2s ease;
+        }
+
+        .biomarker-item:hover {
+            background-color: rgba(255,255,255,0.03);
+        }
+
+        .btn-back {
+            background: linear-gradient(to right, #ff4b5c, #ff8a8a);
+            color: #000;
+            font-weight: 700;
+            border: none;
+            padding: 16px 40px;
+            font-size: 1.15rem;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 18px #ff4b5c99;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-back:hover {
+            transform: scale(1.07);
+            background: linear-gradient(to right, #ff6b6b, #ffc1c1);
+            color: #000;
+        }
+
+        .insights-text {
+            color: #ddd;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+        }
+    </style>
 </head>
-<body class="bg-light">
+<body>
+    <div class="results-card">
+        <svg class="logo" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="dropGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ff3333"/>
+                    <stop offset="100%" style="stop-color:#ff0000"/>
+                </linearGradient>
+            </defs>
+            <path d="M50 0 C50 0 0 50 0 85 C0 105 20 120 50 120 C80 120 100 105 100 85 C100 50 50 0 50 0Z" 
+                  fill="url(#dropGradient)"/>
+            <path d="M35 75 Q50 85 65 75" stroke="white" stroke-width="3" fill="none"/>
+            <circle cx="35" cy="60" r="3" fill="white"/>
+            <path d="M62 57 L68 63" stroke="white" stroke-width="3" stroke-linecap="round"/>
+            <path d="M68 57 L62 63" stroke="white" stroke-width="3" stroke-linecap="round"/>
+        </svg>
 
-<div class="container mt-5">
-    <h1 class="mb-4 text-center">🔍 Your Blood Panel Insights</h1>
+        <h1 class="gradient-text">Your Blood Analysis</h1>
 
-    <div class="card mb-4">
-        <div class="card-header fw-bold">👤 Your Info</div>
-        <div class="card-body">
-            <p><strong>Age:</strong> {{ user_data.age }}</p>
-            <p><strong>Sex:</strong> {{ user_data.sex }}</p>
-            <p><strong>Height:</strong> {{ user_data.height_cm }} cm</p>
-            <p><strong>Weight:</strong> {{ user_data.weight_kg }} kg</p>
+        <!-- Personal Info Section -->
+        <div class="result-section">
+            <h2 class="section-header">👤 Personal Profile</h2>
+            <div class="row">
+                <div class="col-md-3">
+                    <p><strong>Age:</strong> {{ user_data.age }}</p>
+                </div>
+                <div class="col-md-3">
+                    <p><strong>Sex:</strong> {{ user_data.sex }}</p>
+                </div>
+                <div class="col-md-3">
+                    <p><strong>Height:</strong> {{ user_data.height_cm }} cm</p>
+                </div>
+                <div class="col-md-3">
+                    <p><strong>Weight:</strong> {{ user_data.weight_kg }} kg</p>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- ⏳ Phenotypic Age Card -->
-    <div class="card mb-4">
-        <div class="card-header fw-bold">⏳ Phenotypic Age</div>
-        <div class="card-body">
-            <p><strong>Your Phenotypic Age:</strong> {{ phenotypic_age }} years</p>
-            <p class="text-muted">Compared to your actual age of {{ user_data.age }} years</p>
+        <!-- Phenotypic Age Section -->
+        <div class="result-section">
+            <h2 class="section-header">⏳ Biological Age Assessment</h2>
+            <div class="d-flex justify-content-between align-items-center">
+                <p class="mb-0"><strong>Your Biological Age:</strong> {{ phenotypic_age }} years</p>
+                <p class="mb-0 text-muted">Chronological Age: {{ user_data.age }} years</p>
+            </div>
         </div>
-    </div>
 
-    <div class="card mb-4">
-        <div class="card-header fw-bold">🧪 Blood Markers</div>
-        <div class="card-body">
-            <ul class="list-group">
+        <!-- Biomarkers Section -->
+        <div class="result-section">
+            <h2 class="section-header">🧪 Blood Markers</h2>
+            <div class="row">
                 {% for marker, value in user_data.biomarkers.items() %}
-                <li class="list-group-item d-flex justify-content-between">
-                    <span>{{ marker }}</span>
-                    <span>{{ value }}</span>
-                </li>
+                <div class="col-md-4">
+                    <div class="biomarker-item">
+                        <span>{{ marker }}</span>
+                        <span class="text-primary">{{ value }}</span>
+                    </div>
+                </div>
                 {% endfor %}
-            </ul>
+            </div>
+        </div>
+
+        <!-- AI Insights Section -->
+        <div class="result-section">
+            <h2 class="section-header">💡 AI Health Insights</h2>
+            <div class="insights-text">{{ feedback }}</div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="/" class="btn-back">🔄 Analyze Another Sample</a>
         </div>
     </div>
-
-    <div class="card mb-4">
-        <div class="card-header fw-bold">💡 Gemini's Health Insights</div>
-        <div class="card-body">
-            <p style="white-space: pre-wrap;">{{ feedback }}</p>
-        </div>
-    </div>
-
-    <div class="text-center mt-4">
-        <a href="/" class="btn btn-primary">🔁 Analyze Another Panel</a>
-    </div>
-</div>
-
 </body>
 </html>
