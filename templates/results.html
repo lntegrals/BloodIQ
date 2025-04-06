@@ -288,7 +288,7 @@
             <h2 class="section-header">🧪 Blood Markers</h2>
             <div class="biomarker-grid">
                 {% for marker, value in user_data.biomarkers.items() %}
-                    {% set insight = get_marker_insight(marker, value) %}
+                    {% set insight = marker_insights[marker] %}
                     <div class="key-stat">
                         <div class="stat-label">{{ marker }}</div>
                         <div class="stat-value">{{ value }}</div>
