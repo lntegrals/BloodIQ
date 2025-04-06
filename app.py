@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import os
 import numpy as np
 from dotenv import load_dotenv
@@ -55,10 +55,81 @@ def calculate_phenotypic_age(data):
         print("[ERROR] Phenotypic Age calculation failed:", e)
         return None
 
+# --- Marker Insights ---
+def get_marker_insight(marker, value):
+    insights = {
+        "Glucose": {
+            "range": "70-99 mg/dL",
+            "description": "Glucose is your blood sugar level. It's crucial for energy but high levels can indicate diabetes risk.",
+            "thresholds": {"low": 70, "high": 99}
+        },
+        "HDL": {
+            "range": "40-60 mg/dL",
+            "description": "HDL is 'good' cholesterol that helps remove other forms of cholesterol from your bloodstream.",
+            "thresholds": {"low": 40, "high": 60}
+        },
+        "LDL": {
+            "range": "<100 mg/dL",
+            "description": "LDL is 'bad' cholesterol that can build up in your arteries. Lower is generally better.",
+            "thresholds": {"low": 0, "high": 100}
+        },
+        "CRP": {
+            "range": "<3.0 mg/L",
+            "description": "CRP indicates inflammation. Elevated levels might suggest infection or chronic inflammation.",
+            "thresholds": {"low": 0, "high": 3.0}
+        },
+        "ALT": {
+            "range": "7-56 U/L",
+            "description": "ALT is a liver enzyme. Elevated levels can indicate liver stress or damage.",
+            "thresholds": {"low": 7, "high": 56}
+        },
+        "AST": {
+            "range": "10-40 U/L",
+            "description": "AST is another liver enzyme. High levels might indicate liver or muscle damage.",
+            "thresholds": {"low": 10, "high": 40}
+        }
+    }
+
+    if marker not in insights:
+        return {"range": "N/A", "description": "No detailed information available.", "status": "Unknown", "status_class": ""}
+
+    info = insights[marker]
+    value = float(value)
+    
+    if value < info["thresholds"]["low"]:
+        status = "Below Normal"
+        status_class = "status-low"
+    elif value > info["thresholds"]["high"]:
+        status = "Above Normal"
+        status_class = "status-high"
+    else:
+        status = "Normal"
+        status_class = "status-normal"
+
+    return {
+        "range": info["range"],
+        "description": info["description"],
+        "status": status,
+        "status_class": status_class
+    }
+
 # --- Flask Routes ---
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/get_advice', methods=['POST'])
+def get_advice():
+    advice_type = request.form.get('type')
+    user_data = request.form.get('user_data')
+    
+    prompt = generate_prompt(user_data, advice_type)
+    try:
+        model = genai.GenerativeModel(model_name="models/gemini-1.5-pro")
+        response = model.generate_content(prompt)
+        return jsonify({'advice': response.text})
+    except Exception as e:
+        return jsonify({'error': str(e)})
 
 @app.route('/results', methods=['POST'])
 def results():
@@ -101,9 +172,9 @@ def results():
         return render_template('results.html', user_data=user_data)
 
     except ValueError:
-        return "Invalid input: please make sure all fields are filled with numbers."
+        return "Invalid input. Please ensure all fields are correctly filled."
     except Exception as e:
-        return f"Unexpected error: {e}"
+        return f"An error occurred: {e}"
 
 if __name__ == '__main__':
     app.run(debug=True)
