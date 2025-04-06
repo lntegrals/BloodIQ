@@ -1,19 +1,24 @@
 def generate_prompt(user_data, prompt_type="analysis"):
     base_info = f"""Patient Info:
-- Age: {user_data['age']}
+- Age: {user_data['age']} (Biological Age: {user_data.get('phenotypic_age', 'N/A')})
 - Sex: {user_data['sex']}
 - Height: {user_data['height_cm']} cm
 - Weight: {user_data['weight_kg']} kg
 
 Blood Panel Results:
-{chr(10).join([f'- {marker}: {value}' for marker, value in user_data['biomarkers'].items()])}
-"""
+{chr(10).join([f'- {marker}: {value}' for marker, value in user_data['biomarkers'].items()])}"""
 
     prompts = {
-        "analysis": f"""You are an expert health analyst interpreting blood test results. Provide a clear, structured analysis using this format:
+        "analysis": f"""You are an expert health analyst interpreting blood test results. 
+First, note that this person's calculated biological age is {user_data.get('phenotypic_age')} years 
+compared to their chronological age of {user_data['age']} years. 
+Include this in your analysis and what it might mean for their health.
+
+Provide a clear, structured analysis using this format:
 
 🎯 SUMMARY
-• Give a 2-3 sentence overview of the person's general health indicators
+• Start with biological age comparison and what it means
+• Give 2-3 sentence overview of general health indicators
 • Mention if any values are notably good or concerning
 
 📊 KEY FINDINGS

@@ -17,6 +17,81 @@ genai.configure(api_key=api_key)
 app = Flask(__name__)
 model = genai.GenerativeModel('models/gemini-2.0-flash-lite')
 
+def get_marker_info(marker):
+    """Get reference ranges and descriptions for biomarkers"""
+    info = {
+        "Glucose": {
+            "range": "70-99 mg/dL",
+            "description": "Blood sugar level - key indicator of metabolic health",
+            "thresholds": {"low": 70, "high": 99}
+        },
+        "HDL": {
+            "range": "40-60 mg/dL",
+            "description": "Good cholesterol - helps protect heart health",
+            "thresholds": {"low": 40, "high": 60}
+        },
+        "LDL": {
+            "range": "<100 mg/dL",
+            "description": "Bad cholesterol - lower is generally better",
+            "thresholds": {"low": 0, "high": 100}
+        },
+        "CRP": {
+            "range": "<3.0 mg/L",
+            "description": "Inflammation marker - indicates systemic inflammation",
+            "thresholds": {"low": 0, "high": 3.0}
+        },
+        "ALT": {
+            "range": "7-56 U/L",
+            "description": "Liver enzyme - elevated in liver stress",
+            "thresholds": {"low": 7, "high": 56}
+        },
+        "AST": {
+            "range": "10-40 U/L",
+            "description": "Liver enzyme - indicates liver health",
+            "thresholds": {"low": 10, "high": 40}
+        },
+        "Albumin": {
+            "range": "3.4-5.4 g/dL",
+            "description": "Important protein for blood volume",
+            "thresholds": {"low": 3.4, "high": 5.4}
+        },
+        "Creatinine": {
+            "range": "0.7-1.3 mg/dL",
+            "description": "Kidney function marker",
+            "thresholds": {"low": 0.7, "high": 1.3}
+        },
+        "Lymphocyte %": {
+            "range": "20-40%",
+            "description": "White blood cells - immune health",
+            "thresholds": {"low": 20, "high": 40}
+        },
+        "MCV": {
+            "range": "80-100 fL",
+            "description": "Red blood cell size",
+            "thresholds": {"low": 80, "high": 100}
+        },
+        "RDW": {
+            "range": "11.5-14.5%",
+            "description": "Red cell size variation",
+            "thresholds": {"low": 11.5, "high": 14.5}
+        },
+        "Alkaline Phosphatase": {
+            "range": "44-147 U/L",
+            "description": "Liver & bone enzyme",
+            "thresholds": {"low": 44, "high": 147}
+        },
+        "WBC": {
+            "range": "4.5-11.0 ×10⁹/L",
+            "description": "Overall immune strength",
+            "thresholds": {"low": 4.5, "high": 11.0}
+        }
+    }
+    return info.get(marker, {
+        "range": "N/A",
+        "description": "No reference data available",
+        "thresholds": {"low": 0, "high": 999999}
+    })
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -39,14 +114,14 @@ def get_advice():
 @app.route('/results', methods=['POST'])
 def results():
     try:
-        # Collect user input
+        # Collect general info
         age = request.form.get('age')
         sex = request.form.get('sex')
         height = request.form.get('height')
         weight = request.form.get('weight')
 
-        # Biomarkers for phenotypic age calculation
-        phenotypic_inputs = {
+        # Prepare all biomarkers
+        biomarkers = {
             "age": age,
             "albumin": request.form.get('albumin'),
             "creatinine": request.form.get('creatinine'),
@@ -59,21 +134,47 @@ def results():
             "wbc": request.form.get('wbc')
         }
 
-        # Calculate phenotypic age
-        phenotypic_age = calculate_phenotypic_age(phenotypic_inputs)
+        # Calculate phenotypic age (will be included in AI analysis)
+        phenotypic_age = calculate_phenotypic_age(biomarkers)
 
-        if phenotypic_age is None:
-            return "An error occurred while calculating your phenotypic age."
-
-        # Prepare user data for display
+        # Prepare user data
         user_data = {
             "age": int(age),
             "sex": sex,
             "height_cm": float(height),
             "weight_kg": float(weight),
-            "phenotypic_age": phenotypic_age,
-            "biomarkers": phenotypic_inputs  # Include biomarkers in user data
+            "biomarkers": biomarkers,
+            "phenotypic_age": phenotypic_age  # Add to user_data for AI analysis
         }
+
+        # Generate marker insights
+        marker_insights = {}
+        for marker, value in biomarkers.items():
+            if value:
+                marker_insights[marker] = get_marker_info(marker)
+                value_float = float(value)
+                
+                if value_float < marker_insights[marker]["thresholds"]["low"]:
+                    status = "Below Normal"
+                    status_class = "status-low"
+                elif value_float > marker_insights[marker]["thresholds"]["high"]:
+                    status = "Above Normal"
+                    status_class = "status-high"
+                else:
+                    status = "Normal"
+                    status_class = "status-normal"
+
+                marker_insights[marker].update({
+                    "status": status,
+                    "status_class": status_class
+                })
+            else:
+                marker_insights[marker] = {
+                    "range": "N/A",
+                    "description": "Invalid value",
+                    "status": "Unknown",
+                    "status_class": ""
+                }
 
         # Generate AI insights
         try:
@@ -86,10 +187,10 @@ def results():
             print(f"❌ Gemini API error: {str(e)}")
             analysis = meal_plan = exercise_plan = supplements = risks = "AI insights temporarily unavailable"
 
-        # Render results page
         return render_template(
             'results.html',
             user_data=user_data,
+            marker_insights=marker_insights,
             analysis=analysis,
             meal_plan=meal_plan,
             exercise_plan=exercise_plan,
@@ -97,10 +198,9 @@ def results():
             risks=risks
         )
 
-    except ValueError:
-        return "Invalid input. Please ensure all fields are correctly filled."
     except Exception as e:
-        return f"An error occurred: {e}"
+        print(f"❌ Error in results route: {str(e)}")
+        return f"An error occurred: {str(e)}"
 
 if __name__ == '__main__':
     app.run(debug=True)
