@@ -6,43 +6,48 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 from utils.prompt_builder import generate_prompt
 
-# Load .env file to access GEMINI_API_KEY
+# Load environment variables
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = Flask(__name__)
 
-# --- Phenotypic Age Formula Function ---
+# --- Phenotypic Age Formula ---
 def calculate_phenotypic_age(data):
-    albumin = float(data["albumin"])
-    creatinine = float(data["creatinine"])
-    glucose = float(data["glucose"])
-    crp = np.log(float(data["crp"]))
-    lymph_pct = float(data["lymph_pct"])
-    mcv = float(data["mcv"])
-    rdw = float(data["rdw"])
-    alk_phos = float(data["alk_phos"])
-    wbc = float(data["wbc"])
-    age = float(data["age"])
+    try:
+        albumin = float(data["albumin"])
+        creatinine = float(data["creatinine"])
+        glucose = float(data["glucose"])
+        crp = np.log(max(float(data["crp"]), 0.01))  # avoid log(0)
+        lymph_pct = float(data["lymph_pct"])
+        mcv = float(data["mcv"])
+        rdw = float(data["rdw"])
+        alk_phos = float(data["alk_phos"])
+        wbc = float(data["wbc"])
+        age = float(data["age"])
 
-    xb = (
-        -19.907
-        - 0.0336 * albumin
-        + 0.0095 * creatinine
-        + 0.1953 * glucose
-        + 0.0954 * crp
-        - 0.0120 * lymph_pct
-        + 0.0268 * mcv
-        + 0.3306 * rdw
-        + 0.00188 * alk_phos
-        + 0.0554 * wbc
-        + 0.0804 * age
-    )
+        xb = (
+            -19.907
+            - 0.0336 * albumin
+            + 0.0095 * creatinine
+            + 0.1953 * glucose
+            + 0.0954 * crp
+            - 0.0120 * lymph_pct
+            + 0.0268 * mcv
+            + 0.3306 * rdw
+            + 0.00188 * alk_phos
+            + 0.0554 * wbc
+            + 0.0804 * age
+        )
 
-    M = 1 - np.exp(-1.51714 * np.exp(xb) / 0.0076927)
-    phenotypic_age = 141.50 + (np.log(-0.00553 * np.log(1 - M))) / 0.09165
+        M = 1 - np.exp(-1.51714 * np.exp(xb) / 0.0076927)
+        phenotypic_age = 141.50 + (np.log(-0.00553 * np.log(1 - M))) / 0.09165
 
-    return round(phenotypic_age, 2)
+        return round(phenotypic_age, 2)
+
+    except Exception as e:
+        print("[ERROR] Failed to calculate phenotypic age:", e)
+        return None
 
 # --- Routes ---
 @app.route('/')
@@ -76,7 +81,7 @@ def results():
             "biomarkers": {k: float(v) for k, v in biomarkers.items() if v}
         }
 
-        # Additional data for phenotypic age
+        # Phenotypic age inputs
         phenotypic_inputs = {
             "age": age,
             "albumin": request.form.get('albumin'),
@@ -91,11 +96,13 @@ def results():
         }
 
         phenotypic_age = calculate_phenotypic_age(phenotypic_inputs)
+        print("[DEBUG] phenotypic_age =", phenotypic_age)
+        print("[DEBUG] user_data =", user_data)
 
     except ValueError:
         return "Invalid input. Please ensure all fields are numbers."
 
-    # Gemini Prompt
+    # Build Gemini prompt
     prompt = generate_prompt(user_data)
 
     # Gemini API call
