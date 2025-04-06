@@ -24,8 +24,8 @@
         .logo {
             width: 55px;
             position: absolute;
-            top: -28px;
-            left: 30px;
+            top: 138px;  /* Changed from 145px to move slightly higher */
+            left: 420px;
             filter: drop-shadow(0 0 15px rgba(255, 0, 0, 0.2));
             animation: float 4s ease-in-out infinite;
         }
@@ -137,7 +137,7 @@
         }
 
         .key-stat {
-            background: linear-gradient(145deg, rgba(255,75,92,0.1), rgba(255,75,92,0.05));
+            background: #1a1a1d;  /* Changed from rgba to solid color */
             border-radius: 12px;
             padding: 15px;
             margin-bottom: 10px;
@@ -145,17 +145,21 @@
             transition: all 0.3s ease;
             position: relative;
             cursor: help;
+            z-index: 1;  /* Add this line */
         }
 
         .key-stat:hover {
             transform: translateY(-2px);
             border-color: var(--primary-red);
+            background: #202024;  /* Solid hover color */
+            z-index: 1000;  /* Add this line to raise hovered items */
         }
 
         .key-stat:hover .marker-insight {
             opacity: 1;
             transform: translateY(0);
             pointer-events: auto;
+            background: #000000;  /* Ensure full opacity */
         }
 
         .marker-insight {
@@ -163,7 +167,7 @@
             top: calc(100% + 10px);
             left: 0;
             right: 0;
-            background: #000000;
+            background: #000000;  /* Already solid black */
             padding: 15px;
             border-radius: 8px;
             border: 1px solid var(--primary-red);
@@ -173,8 +177,20 @@
             transform: translateY(-10px);
             transition: all 0.3s ease;
             pointer-events: none;
-            z-index: 100;
+            z-index: 1001;  /* Increase this to be higher than the hovered key-stat */
             box-shadow: 0 0 20px rgba(255, 0, 0, 0.15);
+        }
+
+        /* Add this new style for bottom row tooltips */
+        .biomarker-grid > div:nth-last-child(-n+3) .marker-insight {
+            bottom: calc(100% + 10px);
+            top: auto;
+            transform: translateY(10px);
+            z-index: 1001;  /* Match the z-index of other tooltips */
+        }
+
+        .biomarker-grid > div:nth-last-child(-n+3):hover .marker-insight {
+            transform: translateY(0);
         }
 
         .marker-range {
@@ -255,9 +271,36 @@
 
         <h1 class="gradient-text">Your Blood Analysis</h1>
 
+        <!-- Calculate biological age once -->
+        {% set bio_age = namespace(value=user_data.age) %}
+        {% if marker_insights %}
+            {% set markers = {
+                'glucose': {'weight': 0.15, 'optimal': 85},
+                'creatinine': {'weight': 0.15, 'optimal': 0.9},
+                'cholesterol': {'weight': 0.2, 'optimal': 180},
+                'hemoglobin': {'weight': 0.2, 'optimal': 14},
+                'albumin': {'weight': 0.15, 'optimal': 4.3},
+                'bun': {'weight': 0.15, 'optimal': 15}
+            } %}
+            {% set total_deviation = namespace(value=0) %}
+            {% set valid_markers = namespace(count=0) %}
+            
+            {% for marker, data in marker_insights.items() %}
+                {% if marker.lower() in markers and data.value|float > 0 %}
+                    {% set deviation = (data.value|float - markers[marker.lower()]['optimal']) / markers[marker.lower()]['optimal'] %}
+                    {% set total_deviation.value = total_deviation.value + (deviation * markers[marker.lower()]['weight']) %}
+                    {% set valid_markers.count = valid_markers.count + 1 %}
+                {% endif %}
+            {% endfor %}
+            
+            {% if valid_markers.count >= 3 %}
+                {% set bio_age.value = (user_data.age * (1 + total_deviation.value))|round|int %}
+            {% endif %}
+        {% endif %}
+
         <!-- Personal Info Section -->
         <div class="result-section">
-            <h2 class="section-header">👤 Personal Profile</h2>
+            <h2 class="section-header">Personal Profile</h2>
             <div class="row">
                 <div class="col-md-3">
                     <p><strong>Age:</strong> {{ user_data.age }}</p>
@@ -276,7 +319,7 @@
 
         <!-- Updated Biomarkers Section -->
         <div class="result-section">
-            <h2 class="section-header">🧪 Blood Markers</h2>
+            <h2 class="section-header">Blood Markers</h2>
             <div class="biomarker-grid">
                 {% for marker, data in marker_insights.items() %}
                     {% if data and data.description %}
@@ -305,7 +348,7 @@
 
         <!-- Enhanced AI Insights Section -->
         <div class="result-section">
-            <h2 class="section-header">💡 Health Analysis</h2>
+            <h2 class="section-header">Health Analysis</h2>
             <div class="d-flex justify-content-center align-items-center mb-4">
                 <div class="text-center mx-4">
                     <h3 class="mb-2">Chronological Age</h3>
@@ -314,31 +357,6 @@
                 </div>
                 <div class="text-center mx-4">
                     <h3 class="mb-2">Biological Age</h3>
-                    {% set bio_age = namespace(value=user_data.age) %}
-                    {% if marker_insights %}
-                        {% set markers = {
-                            'glucose': {'weight': 0.15, 'optimal': 85},
-                            'creatinine': {'weight': 0.15, 'optimal': 0.9},
-                            'cholesterol': {'weight': 0.2, 'optimal': 180},
-                            'hemoglobin': {'weight': 0.2, 'optimal': 14},
-                            'albumin': {'weight': 0.15, 'optimal': 4.3},
-                            'bun': {'weight': 0.15, 'optimal': 15}
-                        } %}
-                        {% set total_deviation = namespace(value=0) %}
-                        {% set valid_markers = namespace(count=0) %}
-                        
-                        {% for marker, data in marker_insights.items() %}
-                            {% if marker.lower() in markers and data.value|float > 0 %}
-                                {% set deviation = (data.value|float - markers[marker.lower()]['optimal']) / markers[marker.lower()]['optimal'] %}
-                                {% set total_deviation.value = total_deviation.value + (deviation * markers[marker.lower()]['weight']) %}
-                                {% set valid_markers.count = valid_markers.count + 1 %}
-                            {% endif %}
-                        {% endfor %}
-                        
-                        {% if valid_markers.count >= 3 %}
-                            {% set bio_age.value = (user_data.age * (1 + total_deviation.value))|round|int %}
-                        {% endif %}
-                    {% endif %}
                     <div class="value-highlight" style="font-size: 2.5rem;">{{ bio_age.value }}</div>
                     <small class="text-muted">Years</small>
                     <div class="marker-status {{ 'status-normal' if bio_age.value <= user_data.age else 'status-high' }}" style="margin-top: 10px;">
@@ -364,7 +382,7 @@
 
         <!-- AI Insights Tabs -->
         <div class="result-section">
-            <h2 class="section-header">🤖 AI Health Insights</h2>
+            <h2 class="section-header">AI Health Insights</h2>
             <ul class="nav nav-tabs mb-3" id="insightTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="analysis-tab" data-bs-toggle="tab" data-bs-target="#analysis" type="button" role="tab">
@@ -395,7 +413,15 @@
 
             <div class="tab-content" id="insightTabContent">
                 <div class="tab-pane fade show active" id="analysis" role="tabpanel" tabindex="0">
-                    <div class="insights-text">{{ analysis | safe }}</div>
+                    <div class="insights-text">
+                        {% if analysis %}
+                            Based on your biological age of {{ bio_age.value }} years ({{ "lower" if bio_age.value < user_data.age else "higher" }} than your chronological age of {{ user_data.age }} years):
+                            
+                            {{ analysis | safe }}
+                        {% else %}
+                            Analysis not available.
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="tab-pane fade" id="meal-plan" role="tabpanel" tabindex="0">
                     <div class="insights-text">{{ meal_plan | safe }}</div>
@@ -413,7 +439,7 @@
         </div>
 
         <div class="text-center mt-4">
-            <a href="/" class="btn-back">🔄 Analyze Another Sample</a>
+            <a href="/" class="btn-back">Analyze Another Sample</a>
         </div>
     </div>
 </body>
