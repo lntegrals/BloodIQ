@@ -63,7 +63,6 @@ def calculate_phenotypic_age(data):
 @app.route('/')
 def index():
     return render_template('index.html')
-
 @app.route('/results', methods=['POST'])
 def results():
     # Basic info
