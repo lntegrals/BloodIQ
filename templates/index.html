@@ -169,6 +169,43 @@
       padding-left: 10px;
       border-left: 3px solid var(--primary-red);
     }
+
+    /* Health Analysis Box Styles */
+    .analysis-box {
+      background: linear-gradient(140deg, #1a1a1d, #111113);
+      border-radius: 20px;
+      padding: 25px;
+      margin-top: 30px;
+      display: none;
+      border: 1px solid rgba(255, 75, 92, 0.2);
+    }
+
+    .age-comparison {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      margin: 20px 0;
+    }
+
+    .age-card {
+      text-align: center;
+      padding: 15px;
+      border-radius: 15px;
+      background: rgba(255, 75, 92, 0.1);
+      min-width: 150px;
+    }
+
+    .age-label {
+      font-size: 0.9rem;
+      color: #ff4b5c;
+      margin-bottom: 5px;
+    }
+
+    .age-value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -271,6 +308,21 @@
         <button type="submit" class="btn btn-analyze">🔬 Analyze My Blood</button>
         <button type="button" onclick="fillSampleData()" class="btn btn-sample">📋 Load Sample Data</button>
       </div>
+
+      <!-- Health Analysis Box -->
+      <div id="analysisBox" class="analysis-box">
+        <div class="section-title">💡 Health Analysis</div>
+        <div class="age-comparison">
+          <div class="age-card">
+            <div class="age-label">Chronological Age</div>
+            <div class="age-value" id="chronologicalAge">--</div>
+          </div>
+          <div class="age-card">
+            <div class="age-label">Biological Age</div>
+            <div class="age-value" id="biologicalAge">--</div>
+          </div>
+        </div>
+      </div>
     </form>
   </div>
 
@@ -304,6 +356,17 @@
         }
       });
     }
+    
+    // Show analysis box on form submission
+    document.querySelector('form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const age = document.querySelector('[name="age"]').value;
+      document.getElementById('chronologicalAge').textContent = age;
+      // This is a placeholder calculation - replace with actual biological age calculation
+      const bioAge = Math.round(parseInt(age) * (Math.random() * 0.4 + 0.8));
+      document.getElementById('biologicalAge').textContent = bioAge;
+      document.getElementById('analysisBox').style.display = 'block';
+    });
   </script>
 </body>
 </html>
