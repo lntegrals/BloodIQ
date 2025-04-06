@@ -1,32 +1,34 @@
-# app.py
 from flask import Flask, render_template, request
 import os
-import numpy as np
+import numpy as np  # ✅ NumPy import for log, exp, etc.
 from dotenv import load_dotenv
 import google.generativeai as genai
 from utils.prompt_builder import generate_prompt
 
-# Load environment variables
+# Load Gemini API key from .env
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = Flask(__name__)
 
-# --- Phenotypic Age Formula (Stable + Validated) ---
+# --- ✅ Corrected & Converted Phenotypic Age Formula ---
 def calculate_phenotypic_age(data):
     try:
-        albumin = float(data["albumin"])
-        creatinine = float(data["creatinine"])
-        glucose = float(data["glucose"])
-        crp_raw = float(data["crp"])
-        crp = np.log(crp_raw if crp_raw > 0 else 0.01)  # avoid log(0)
+        # ✅ Convert units where necessary
+        albumin = float(data["albumin"]) * 10           # g/dL → g/L
+        creatinine = float(data["creatinine"]) * 88.4   # mg/dL → µmol/L
+        glucose = float(data["glucose"]) / 18           # mg/dL → mmol/L
+        crp_val = float(data["crp"]) / 10               # mg/L → mg/dL
+        crp = np.log(crp_val if crp_val > 0 else 0.01)  # prevent log(0)
+
         lymph_pct = float(data["lymph_pct"])
         mcv = float(data["mcv"])
         rdw = float(data["rdw"])
         alk_phos = float(data["alk_phos"])
-        wbc = float(data["wbc"])
+        wbc = float(data["wbc"]) * 1000                 # ×10⁹/L → cells/μL
         age = float(data["age"])
 
+        # 🧮 Calculate XB (from Levine's formula)
         xb = (
             -19.907
             - 0.0336 * albumin
@@ -41,37 +43,36 @@ def calculate_phenotypic_age(data):
             + 0.0804 * age
         )
 
+        # 🧠 Phenotypic Age calculation
+        xb = np.clip(xb, -30, 30)
         exp_xb = np.exp(xb)
         M = 1 - np.exp(-1.51714 * exp_xb / 0.0076927)
-
-        # Validate M to avoid log(0) or negative input
-        if M >= 1.0:
-            M = 0.999999
-        elif M <= 0.0:
-            M = 0.000001
+        M = np.clip(M, 1e-5, 1 - 1e-5)
 
         phenotypic_age = 141.50 + (np.log(-0.00553 * np.log(1 - M))) / 0.09165
 
+        # 🧾 Debug log
+        print(f"[DEBUG] xb = {xb:.2f}, M = {M:.6f}, Age = {phenotypic_age:.2f}")
         return round(phenotypic_age, 2)
 
     except Exception as e:
-        print("[ERROR] Phenotypic age calculation failed:", e)
+        print("[ERROR] Phenotypic Age calculation failed:", e)
         return None
 
-# --- Routes ---
+# --- Flask Routes ---
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/results', methods=['POST'])
 def results():
-    # Collect general inputs
+    # Basic info
     age = request.form.get('age')
     sex = request.form.get('sex')
     height = request.form.get('height')
     weight = request.form.get('weight')
 
-    # Biomarkers for Gemini
+    # Biomarkers for Gemini AI
     biomarkers = {
         "Glucose": request.form.get('glucose'),
         "HDL": request.form.get('hdl'),
@@ -82,6 +83,7 @@ def results():
     }
 
     try:
+        # Format for Gemini prompt
         user_data = {
             "age": int(age),
             "sex": sex,
@@ -90,7 +92,7 @@ def results():
             "biomarkers": {k: float(v) for k, v in biomarkers.items() if v}
         }
 
-        # Inputs needed for phenotypic age
+        # Inputs for Phenotypic Age calculation
         phenotypic_inputs = {
             "age": age,
             "albumin": request.form.get('albumin'),
@@ -107,12 +109,11 @@ def results():
         phenotypic_age = calculate_phenotypic_age(phenotypic_inputs)
 
     except ValueError:
-        return "Invalid input. Please ensure all fields are numbers."
+        return "Invalid input. Please ensure all fields are correctly filled."
 
-    # Prompt for Gemini
+    # Generate Gemini prompt
     prompt = generate_prompt(user_data)
 
-    # Gemini response
     try:
         model = genai.GenerativeModel(model_name="models/gemini-1.5-pro")
         response = model.generate_content(prompt)
