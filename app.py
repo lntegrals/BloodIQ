@@ -12,43 +12,48 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 app = Flask(__name__)
 
 def calculate_phenotypic_age(data):
-    albumin = float(data["albumin"])
-    creatinine = float(data["creatinine"])
-    glucose = float(data["glucose"])
-    crp = np.log(float(data["crp"]))
-    lymph_pct = float(data["lymph_pct"])
-    mcv = float(data["mcv"])
-    rdw = float(data["rdw"])
-    alk_phos = float(data["alk_phos"])
-    wbc = float(data["wbc"])
-    age = float(data["age"])
-
-    xb = (
-        -19.907
-        - 0.0336 * albumin
-        + 0.0095 * creatinine
-        + 0.1953 * glucose
-        + 0.0954 * crp
-        - 0.0120 * lymph_pct
-        + 0.0268 * mcv
-        + 0.3306 * rdw
-        + 0.00188 * alk_phos
-        + 0.0554 * wbc
-        + 0.0804 * age
-    )
-
-    # --- Clamping to prevent overflow ---
-    xb = np.clip(xb, -100, 100)
     try:
+        albumin = float(data["albumin"])
+        creatinine = float(data["creatinine"])
+        glucose = float(data["glucose"])
+        crp_val = float(data["crp"])
+        if crp_val <= 0:
+            raise ValueError("CRP must be > 0")
+        crp = np.log(crp_val)
+        lymph_pct = float(data["lymph_pct"])
+        mcv = float(data["mcv"])
+        rdw = float(data["rdw"])
+        alk_phos = float(data["alk_phos"])
+        wbc = float(data["wbc"])
+        age = float(data["age"])
+
+        xb = (
+            -19.907
+            - 0.0336 * albumin
+            + 0.0095 * creatinine
+            + 0.1953 * glucose
+            + 0.0954 * crp
+            - 0.0120 * lymph_pct
+            + 0.0268 * mcv
+            + 0.3306 * rdw
+            + 0.00188 * alk_phos
+            + 0.0554 * wbc
+            + 0.0804 * age
+        )
+
+        xb = np.clip(xb, -30, 30)  # Safe range
+
         exp_part = np.exp(xb)
         M = 1 - np.exp(-1.51714 * exp_part / 0.0076927)
-        M = np.clip(M, 1e-10, 1 - 1e-10)  # Prevent log(0)
+        M = np.clip(M, 1e-5, 1 - 1e-5)
+
         phenotypic_age = 141.50 + (np.log(-0.00553 * np.log(1 - M))) / 0.09165
         return round(phenotypic_age, 2)
-    except Exception as e:
-        print(f"Phenotypic age error: {e}")
-        return "Calculation error"
 
+    except Exception as e:
+        print("Phenotypic Age Calculation Error:", e)
+        return "Calculation error"
+    
 # --- Routes ---
 @app.route('/')
 def index():
