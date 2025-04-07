@@ -3,6 +3,7 @@ import os
 import numpy as np
 import google.generativeai as genai
 from dotenv import load_dotenv
+import markdown2  # Add this import
 from utils.prompt_builder import generate_prompt
 from utils.biological_age import calculate_biological_age
 
@@ -116,6 +117,19 @@ def calculate_biological_age(blood_markers):
     biological_age = chronological_age + age_modifier
     return round(biological_age, 1)
 
+def format_markdown(text):
+    """Convert markdown to HTML with specific extras enabled"""
+    # First, ensure numbers in bold are properly formatted
+    text = text.replace('**(', '** (')  # Add space after bold start if followed by parenthesis
+    return markdown2.markdown(text.strip(), extras=[
+        'break-on-newline',
+        'tables',
+        'fenced-code-blocks',
+        'header-ids',
+        'strike',
+        'target-blank-links'
+    ])
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -201,13 +215,13 @@ def results():
                 except (ValueError, TypeError):
                     continue
 
-        # Generate AI insights
+        # Generate AI insights with markdown formatting
         try:
-            analysis = model.generate_content(generate_prompt(user_data, "analysis")).text
-            meal_plan = model.generate_content(generate_prompt(user_data, "meal_plan")).text
-            exercise_plan = model.generate_content(generate_prompt(user_data, "exercise_plan")).text
-            supplements = model.generate_content(generate_prompt(user_data, "supplement_advice")).text
-            risks = model.generate_content(generate_prompt(user_data, "risk_assessment")).text
+            analysis = format_markdown(model.generate_content(generate_prompt(user_data, "analysis")).text)
+            meal_plan = format_markdown(model.generate_content(generate_prompt(user_data, "meal_plan")).text)
+            exercise_plan = format_markdown(model.generate_content(generate_prompt(user_data, "exercise_plan")).text)
+            supplements = format_markdown(model.generate_content(generate_prompt(user_data, "supplement_advice")).text)
+            risks = format_markdown(model.generate_content(generate_prompt(user_data, "risk_assessment")).text)
         except Exception as e:
             print(f"❌ Gemini API error: {str(e)}")
             analysis = meal_plan = exercise_plan = supplements = risks = "AI insights temporarily unavailable"
