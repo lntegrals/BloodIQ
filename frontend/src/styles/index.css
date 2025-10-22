@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-white text-slate-900;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
+}
+
+.card {
+  @apply bg-white rounded-xl shadow-sm border border-slate-200;
+}
+
+.chip-normal { @apply bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs; }
+.chip-low { @apply bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs; }
+.chip-high { @apply bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs; }
+
